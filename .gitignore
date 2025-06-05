@@ -1,0 +1,55 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 가상환경 디렉토리 (보통 venv, env, .venv 등)
+venv/
+env/
+.venv/
+
+# IDE 설정 파일들
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# 테스트 결과물
+.coverage
+*.cover
+htmlcov/
+
+# 로그 파일
+*.log
+
+# 파이썬 패키지 배포 관련 파일
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+*.egg-info/
+pip-wheel-metadata/
+wheelhouse/
+
+# Jupyter Notebook 체크포인트
+.ipynb_checkpoints
+
+# PyCharm
+*.iml
+*.iws
+.idea/
+
+# 환경변수 설정 파일
+.env
+.env.*
+
+# 기타 OS 파일
+.DS_Store
+Thumbs.db

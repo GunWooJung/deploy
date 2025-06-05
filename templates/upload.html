@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>배달비 계산</title>
+  <style>
+    /* 기존 스타일 그대로 */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      padding: 30px;
+      color: #333;
+
+      display: flex;
+      justify-content: center; /* 가로 가운데 */
+      align-items: center;     /* 세로 가운데 */
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    form {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 30px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    input[type="file"] {
+      flex-grow: 1;
+      cursor: pointer;
+    }
+
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #34495e;
+      text-align: center;
+    }
+
+    h4 {
+      margin-top: 40px;
+      margin-bottom: 8px;
+      font-size: 18px;
+      color: #34495e;
+      text-align: center;
+    }
+
+    .summary {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 30px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      background-color: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px 14px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ecf0f1;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    @media (max-width: 640px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      th {
+        display: none;
+      }
+
+      td {
+        border: none;
+        padding: 8px 0;
+        text-align: left;
+      }
+
+      td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: inline-block;
+        width: 100px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <form id="uploadForm">
+      <input type="file" id="file" name="file" accept=".xlsx" required />
+      <button type="submit">업로드</button>
+    </form>
+
+    <h3>집계 결과</h3>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    function formatDate(yyyyMMdd) {
+      const year = yyyyMMdd.substring(0, 4);
+      const month = yyyyMMdd.substring(4, 6);
+      const day = yyyyMMdd.substring(6, 8);
+      return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`;
+    }
+
+    function formatCurrency(value) {
+      return Number(value).toLocaleString() + '원';
+    }
+
+    document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const formData = new FormData();
+      formData.append("file", document.getElementById("file").files[0]);
+
+      const res = await fetch("/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "";
+
+      if (data.status === "success") {
+        const riders = data.data;
+
+        for (const riderName in riders) {
+          const rider = riders[riderName];
+          const total = rider["총합계"];
+          const afterTax = Math.floor(total * (1 - 0.049));  // 소수점 절사
+
+          const header = document.createElement("h4");
+          header.textContent = `${riderName}`;
+          resultDiv.appendChild(header);
+
+          const summary = document.createElement("div");
+          summary.className = "summary";
+          summary.innerHTML = `
+            총합계: ${formatCurrency(total)}<br>
+            세금 제외(4.9%): ${formatCurrency(afterTax)}
+          `;
+          resultDiv.appendChild(summary);
+
+          const table = document.createElement("table");
+          const thead = document.createElement("thead");
+          const headerRow = document.createElement("tr");
+
+          // 헤더에 '세금 제외(4.9%)' 추가
+          ["운행일", "배달처리비", "세금 제외(4.9%)"].forEach(col => {
+            const th = document.createElement("th");
+            th.textContent = col;
+            headerRow.appendChild(th);
+          });
+
+          thead.appendChild(headerRow);
+          table.appendChild(thead);
+
+          const tbody = document.createElement("tbody");
+          rider["기록"].forEach(record => {
+            const row = document.createElement("tr");
+
+            const dateCell = document.createElement("td");
+            dateCell.textContent = formatDate(record["운행일"]);
+            row.appendChild(dateCell);
+
+            const amount = record["배달처리비"];
+
+            const amountCell = document.createElement("td");
+            amountCell.textContent = formatCurrency(amount);
+            row.appendChild(amountCell);
+
+            // 세금 제외 금액 계산 (소수점 절사)
+            const afterTaxAmount = Math.floor(amount * (1 - 0.049));
+            const afterTaxCell = document.createElement("td");
+            afterTaxCell.textContent = formatCurrency(afterTaxAmount);
+            row.appendChild(afterTaxCell);
+
+            tbody.appendChild(row);
+          });
+
+          table.appendChild(tbody);
+          resultDiv.appendChild(table);
+        }
+      } else {
+        resultDiv.textContent = "에러: " + data.message;
+      }
+    });
+  </script>
+</body>
+</html>
