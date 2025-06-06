@@ -4,46 +4,71 @@
   <meta charset="UTF-8" />
   <title>배달비 계산</title>
   <style>
-    /* 기존 스타일 그대로 */
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f6f9;
-      padding: 30px;
-      color: #333;
-
-      display: flex;
-      justify-content: center; /* 가로 가운데 */
-      align-items: center;     /* 세로 가운데 */
-      min-height: 100vh;
-      margin: 0;
-    }
-
     .container {
       width: 100%;
-      max-width: 600px;
+      max-width: 1200px;
       background: #fff;
-      padding: 20px;
+      padding: 20px 30px 40px 30px;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       box-sizing: border-box;
       text-align: center;
     }
-
+   nav {
+      background-color: #3498db;
+      padding: 12px 20px;
+      display: flex;
+      gap: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0 0 40px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      flex-grow: 1;
+      text-align: center;
+    }
+    nav a.active {
+      background-color: #2980b9;
+    }
+    nav a:hover {
+      background-color: #2980b9;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      padding: 30px;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
     form {
-      display: inline-flex;
       align-items: center;
       gap: 10px;
       justify-content: center;
       margin-bottom: 30px;
       width: 100%;
-      max-width: 400px;
+      max-width: 600px;
+      flex-wrap: wrap;
+      padding: 10px;
     }
-
+    label {
+      white-space: nowrap;
+      font-weight: 600;
+    }
     input[type="file"] {
       flex-grow: 1;
       cursor: pointer;
     }
-
     button {
       background-color: #3498db;
       color: white;
@@ -54,185 +79,246 @@
       font-size: 14px;
       transition: background-color 0.3s ease;
       white-space: nowrap;
+      min-width: 100px;
     }
-
     button:hover {
       background-color: #2980b9;
     }
-
     h3 {
-      margin-top: 0;
+      margin-top: 20px;
       margin-bottom: 20px;
       color: #34495e;
       text-align: center;
     }
-
     h4 {
-      margin-top: 40px;
-      margin-bottom: 8px;
+      margin-top: 100px;
+      margin-bottom: 30px;
       font-size: 18px;
       color: #34495e;
-      text-align: center;
+      text-align: left;
     }
-
     .summary {
       font-size: 14px;
       color: #555;
       margin-bottom: 12px;
-      text-align: center;
+      text-align: left;
     }
-
+    .result-box {
+      margin-bottom: 40px;
+      border: 1px solid #ddd;
+      padding: 15px 20px;
+      border-radius: 10px;
+      background-color: #fafafa;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      text-align: left;
+      min-height: 150px;
+    }
     table {
       border-collapse: collapse;
       width: 100%;
-      margin-bottom: 30px;
+      margin-top: 10px;
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       background-color: #fff;
     }
-
     th, td {
       border: 1px solid #ddd;
       padding: 10px 14px;
       text-align: center;
+      white-space: nowrap; /* 줄바꿈 방지 */
     }
-
     th {
       background-color: #ecf0f1;
       font-weight: bold;
     }
-
     tr:nth-child(even) {
       background-color: #f9f9f9;
     }
 
-    @media (max-width: 640px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-
-      th {
-        display: none;
-      }
-
-      td {
-        border: none;
-        padding: 8px 0;
-        text-align: left;
-      }
-
-      td:before {
-        content: attr(data-label);
-        font-weight: bold;
-        display: inline-block;
-        width: 100px;
-      }
-    }
   </style>
 </head>
 <body>
+
   <div class="container">
-    <form id="uploadForm">
-      <input type="file" id="file" name="file" accept=".xlsx" required />
-      <button type="submit">업로드</button>
-    </form>
+    <nav>
+      <a href="/admin-member" class="{% if active_tab == 'member' %}active{% endif %}">회원관리</a>
+      <a href="/admin-manage" class="{% if active_tab == 'manage' %}active{% endif %}">일정산</a>
+    </nav>
+
+    <!-- 전체를 감싸는 컨테이너를 사용 -->
+    <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; min-height: 20vh;">
+      <form id="uploadForm">
+        <div style="margin-bottom: 20px;">
+          <label>일 정산 파일 : </label>
+          <input type="file" id="file1" name="file1" accept=".xlsx" required />
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label>보험료 파일 : </label>
+          <input type="file" id="file2" name="file2" accept=".xlsx" required />
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+          <button type="submit">업로드</button>
+        </div>
+      </form>
+    </div>
 
     <h3>집계 결과</h3>
-    <div id="result"></div>
+    <div id="resultCombined" class="result-box">
+      <!-- 일정산 + 보험료 결과 영역 -->
+    </div>
   </div>
 
   <script>
-    function formatDate(yyyyMMdd) {
-      const year = yyyyMMdd.substring(0, 4);
-      const month = yyyyMMdd.substring(4, 6);
-      const day = yyyyMMdd.substring(6, 8);
-      return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`;
+
+  const password = "3458";
+  const PASSWORD_KEY = "admin_password";
+
+  // localStorage에 저장된 비밀번호 확인
+  const savedPassword = localStorage.getItem(PASSWORD_KEY);
+
+  if (savedPassword !== password) {
+    const input = prompt("현관문(안쪽) 비밀번호를 입력하세요:");
+
+    if (input !== password) {
+      alert("비밀번호가 틀렸습니다. 페이지를 닫습니다.");
+      window.close();  // 브라우저가 허용하지 않으면 아래로 대체
+      document.body.innerHTML = "<h2>접근이 차단되었습니다.</h2>";
+    } else {
+      // 올바른 비밀번호면 localStorage에 저장
+      localStorage.setItem(PASSWORD_KEY, password);
+    }
+  }
+
+  function formatDate(yyyyMMdd) {
+    const year = yyyyMMdd.substring(0, 4);
+    const month = yyyyMMdd.substring(4, 6);
+    const day = yyyyMMdd.substring(6, 8);
+    return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`;
+  }
+
+  function formatCurrency(value) {
+    return Number(value).toLocaleString() + '원';
+  }
+
+  document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const file1 = document.getElementById("file1").files[0];
+    const file2 = document.getElementById("file2").files[0];
+    const resultCombined = document.getElementById("resultCombined");
+
+    // 결과 초기화
+    resultCombined.innerHTML = "";
+
+    if (!file1 || !file2) {
+      alert("두 파일 모두 선택해주세요.");
+      return;
     }
 
-    function formatCurrency(value) {
-      return Number(value).toLocaleString() + '원';
-    }
+    const formData = new FormData();
+    formData.append("file1", file1);
+    formData.append("file2", file2);
 
-    document.getElementById("uploadForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const formData = new FormData();
-      formData.append("file", document.getElementById("file").files[0]);
-
+    let data;
+    try {
       const res = await fetch("/upload", {
         method: "POST",
         body: formData
       });
+      data = await res.json();
+    } catch (err) {
+      resultCombined.textContent = "파일 업로드 중 에러가 발생했습니다.";
+      return;
+    }
 
-      const data = await res.json();
-      const resultDiv = document.getElementById("result");
-      resultDiv.innerHTML = "";
+    if (data.status !== "success") {
+      resultCombined.textContent = "서버 오류: " + (data.message || "알 수 없는 오류");
+      return;
+    }
 
-      if (data.status === "success") {
-        const riders = data.data;
+    const result = data.data;
 
-        for (const riderName in riders) {
-          const rider = riders[riderName];
-          const total = rider["총합계"];
-          const afterTax = Math.floor(total * (1 - 0.049));  // 소수점 절사
+     for (const rider in result) {
+        const riderData = result[rider];
+        const moto_fee = Number(riderData["moto_fee"]) || 0;
 
-          const header = document.createElement("h4");
-          header.textContent = `${riderName}`;
-          resultDiv.appendChild(header);
+        // 초기 days (기존에 서버가 제공하던 값)
+        let days = 1;
 
-          const summary = document.createElement("div");
-          summary.className = "summary";
-          summary.innerHTML = `
-            총합계: ${formatCurrency(total)}<br>
-            세금 제외(4.9%): ${formatCurrency(afterTax)}
-          `;
-          resultDiv.appendChild(summary);
+        // 라이더 영역 생성
+        const riderSection = document.createElement("div");
+        const riderTitle = document.createElement("h4");
+        riderTitle.textContent = `${rider} (최종 합계: 계산 중...) `;
+        riderSection.appendChild(riderTitle);
 
-          const table = document.createElement("table");
-          const thead = document.createElement("thead");
-          const headerRow = document.createElement("tr");
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        thead.innerHTML = `
+          <tr>
+            <th>운행일</th>
+            <th>배달처리비</th>
+            <th>세금 제외</th>
+            <th>보험료</th>
+             <th>오토바이 요금 (<span>${formatCurrency(moto_fee)} × </span><input type="number" value="${days}" min="1" class="daysInput" style="width:20px; display:inline-block;" />&nbsp;일)</th>
+            <th>최종 금액</th>
+          </tr>
+        `;
+        table.appendChild(thead);
+        const tbody = document.createElement("tbody");
+        table.appendChild(tbody);
+        riderSection.appendChild(table);
+        resultCombined.appendChild(riderSection);
 
-          // 헤더에 '세금 제외(4.9%)' 추가
-          ["운행일", "배달처리비", "세금 제외(4.9%)"].forEach(col => {
-            const th = document.createElement("th");
-            th.textContent = col;
-            headerRow.appendChild(th);
-          });
+        function recalculateTable(currentDays) {
+          let finalSum = 0;
+          tbody.innerHTML = "";
 
-          thead.appendChild(headerRow);
-          table.appendChild(thead);
+          for (const record of riderData["기록"]) {
+            const tr = document.createElement("tr");
 
-          const tbody = document.createElement("tbody");
-          rider["기록"].forEach(record => {
-            const row = document.createElement("tr");
+            const 운행일 = record["운행일"];
+            const formattedDate = 운행일.length === 8 ? formatDate(운행일) : 운행일;
 
-            const dateCell = document.createElement("td");
-            dateCell.textContent = formatDate(record["운행일"]);
-            row.appendChild(dateCell);
+            const 배달처리비 = Number(record["배달처리비"]) || 0;
+            const 보험료 = Number(record["보험료 발생금액(원)"]) || 0;
 
-            const amount = record["배달처리비"];
+            const afterTax = Math.floor(배달처리비 * (1 - 0.049));
+            const afterInsurance = afterTax - 보험료;
+            const motoFeeTotal = moto_fee * currentDays;
+            const afterMoto = afterInsurance - motoFeeTotal;
 
-            const amountCell = document.createElement("td");
-            amountCell.textContent = formatCurrency(amount);
-            row.appendChild(amountCell);
+            finalSum += afterMoto;
 
-            // 세금 제외 금액 계산 (소수점 절사)
-            const afterTaxAmount = Math.floor(amount * (1 - 0.049));
-            const afterTaxCell = document.createElement("td");
-            afterTaxCell.textContent = formatCurrency(afterTaxAmount);
-            row.appendChild(afterTaxCell);
+            tr.innerHTML = `
+              <td>${formattedDate}</td>
+              <td>${formatCurrency(배달처리비)}</td>
+              <td>${formatCurrency(afterTax)}</td>
+              <td>${formatCurrency(보험료)}</td>
+              <td>${formatCurrency(motoFeeTotal)}</td>
+              <td>${formatCurrency(afterMoto)}</td>
+            `;
+            tbody.appendChild(tr);
+          }
 
-            tbody.appendChild(row);
-          });
-
-          table.appendChild(tbody);
-          resultDiv.appendChild(table);
+          riderTitle.firstChild.textContent = `${rider} (최종 합계: ${formatCurrency(finalSum)})`;
         }
-      } else {
-        resultDiv.textContent = "에러: " + data.message;
+
+        // 초기 계산
+        recalculateTable(days);
+
+       // 테이블 삽입 후 input 가져오기
+        const daysInputTh = thead.querySelector('.daysInput');
+
+        // 초기 렌더링
+        recalculateTable(Number(daysInputTh.value));
+
+        // 변경 시 리렌더링
+        daysInputTh.addEventListener("input", () => {
+          recalculateTable(Number(daysInputTh.value));
+        });
       }
-    });
-  </script>
+   });
+ </script>
 </body>
 </html>

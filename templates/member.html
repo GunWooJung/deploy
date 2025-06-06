@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>회원 관리</title>
+  <style>
+    /* 기존 스타일 유지 */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      background: #fff;
+      padding: 20px 30px 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-sizing: border-box;
+      text-align: center;
+    }
+    nav {
+      background-color: #3498db;
+      padding: 12px 20px;
+      display: flex;
+      gap: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0 0 40px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      flex-grow: 1;
+      text-align: center;
+    }
+    nav a.active {
+      background-color: #2980b9;
+    }
+    nav a:hover {
+      background-color: #2980b9;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      padding: 30px;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px 14px;
+      text-align: center;
+    }
+    th {
+      background-color: #ecf0f1;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    input[type="number"] {
+      width: 80px;
+      padding: 4px;
+      text-align: right;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .btn-small {
+      min-width: 70px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #34495e;
+      text-align: center;
+    }
+    .btn-add {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      float: right;
+    }
+    @media (max-width: 640px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      th {
+        display: none;
+      }
+      td {
+        border: none;
+        padding: 8px 0;
+        text-align: left;
+      }
+      td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: inline-block;
+        width: 100px;
+      }
+      .btn-add {
+        float: none;
+        display: block;
+        margin: 10px auto 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/admin-member" class="active">회원관리</a>
+      <a href="/admin-manage">일정산</a>
+    </nav>
+
+    <h3>회원 목록</h3>
+    <button class="btn-add" id="addMemberBtn">회원 추가</button>
+
+    <table id="memberTable" aria-label="회원 목록">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>이름</th>
+          <th>오토바이 일 이용료</th>
+          <th>저장</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in members %}
+          <tr>
+            <td>{{ member.id }}</td>
+            <td>{{ member.name }}</td>
+            <td>
+              <input type="number" name="moto_fee" value="{{ member.moto_fee }}" data-member-id="{{ member.id }}"/>원
+            </td>
+            <td>
+              <button class="btn-small" data-member-id="{{ member.id }}" data-member-name="{{ member.name }}">
+                저장
+              </button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+  const password = "3458";
+  const PASSWORD_KEY = "admin_password";
+
+  // localStorage에 저장된 비밀번호 확인
+  const savedPassword = localStorage.getItem(PASSWORD_KEY);
+
+  if (savedPassword !== password) {
+    const input = prompt("현관문(안쪽) 비밀번호를 입력하세요:");
+
+    if (input !== password) {
+      alert("비밀번호가 틀렸습니다. 페이지를 닫습니다.");
+      window.close();  // 브라우저가 허용하지 않으면 아래로 대체
+      document.body.innerHTML = "<h2>접근이 차단되었습니다.</h2>";
+    } else {
+      // 올바른 비밀번호면 localStorage에 저장
+      localStorage.setItem(PASSWORD_KEY, password);
+    }
+  }
+
+    const memberTableBody = document.querySelector('#memberTable tbody');
+
+    document.getElementById('addMemberBtn').addEventListener('click', async () => {
+      const confirmed = confirm("새 회원을 추가하시겠습니까?");
+      if (!confirmed) return;
+
+      const newName = prompt("추가할 회원의 이름을 입력하세요:");
+      if (newName === null) return; // 취소
+
+      const trimmedName = newName.trim();
+      if (trimmedName.length === 0) {
+        alert('이름을 입력해주세요.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/member/add?name=${encodeURIComponent(trimmedName)}`, {
+          method: 'GET' // 혹은 백엔드가 POST를 요구하면 'POST'로 변경
+        });
+
+        if (!response.ok) {
+          // 에러 응답 처리
+          const errorText = await response.text();
+          alert(`회원 추가 실패: ${errorText}`);
+          return;
+        }
+
+        alert(`회원 ${trimmedName}님이 추가되었습니다.`);
+        location.reload();  // 페이지 새로고침
+      } catch (error) {
+        alert(`요청 중 오류가 발생했습니다: ${error.message}`);
+      }
+    });
+
+  // name -> 한글 라벨 매핑
+  const labelMap = {
+    moto_fee: "오토바이 일 이용료",
+    // 다른 input name들이 있으면 여기에 추가
+    // 예) monthly_fee: "월 이용료",
+    //     discount_rate: "할인율"
+  };
+
+memberTableBody.addEventListener('click', async (e) => {
+  const button = e.target.closest('button[data-member-id]');
+  if (!button) return;
+
+  const memberId = button.getAttribute('data-member-id');
+  const memberName = button.getAttribute('data-member-name');
+
+  const row = button.closest('tr');
+  // 같은 행 안에 있는 memberId가 같은 input들 모두 선택
+  const inputEls = row.querySelectorAll(`input[data-member-id="${memberId}"]`);
+
+  const data = {};
+  inputEls.forEach(input => {
+    data[input.name] = input.value;
+  });
+
+   // memberName을 data에 추가
+
+
+ // key 대신 한글 라벨로 출력, 없으면 key 그대로
+  const summary = Object.entries(data)
+    .map(([key, value]) => `${labelMap[key] || key} ${value}원`)
+    .join('\n');
+
+  const confirmed = confirm(`${memberName}님의\n\n${summary}\n\n으로 수정하시겠습니까?`);
+  if (!confirmed) return;
+  data.name = memberName;
+  try {
+    const response = await fetch(`/member/edit/${memberId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      alert(`수정 실패: ${errorText}`);
+      return;
+    }
+
+    alert("저장되었습니다.");
+    location.reload();
+  } catch (error) {
+    alert(`요청 실패: ${error.message}`);
+  }
+});
+
+
+  </script>
+</body>
+</html>
