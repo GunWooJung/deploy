@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>주 정산 소급 적용 계산</title>
+  <style>
+    /* 기존 스타일 유지 */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      background: #fff;
+      padding: 20px 30px 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-sizing: border-box;
+      text-align: center;
+    }
+    nav {
+      background-color: #3498db;
+      padding: 12px 20px;
+      display: flex;
+      gap: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0 0 40px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      flex-grow: 1;
+      text-align: center;
+    }
+    nav a.active {
+      background-color: #2980b9;
+    }
+    nav a:hover {
+      background-color: #2980b9;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      padding: 30px;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px 14px;
+      text-align: center;
+    }
+    th {
+      background-color: #ecf0f1;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    input[type="number"] {
+      width: 80px;
+      padding: 4px;
+      text-align: right;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .btn-small {
+      min-width: 70px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #34495e;
+      text-align: center;
+    }
+    .btn-add {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      float: right;
+    }
+    @media (max-width: 640px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      th {
+        display: none;
+      }
+      td {
+        border: none;
+        padding: 8px 0;
+        text-align: left;
+      }
+      td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: inline-block;
+        width: 100px;
+      }
+      .btn-add {
+        float: none;
+        display: block;
+        margin: 10px auto 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/admin-member">회원관리</a>
+      <a href="/admin-manage" >일정산</a>
+      <a href="/admin-week" >주 정산</a>
+      <a href="/admin-week-plus" class="active">주 정산 소급 적용</a>
+    </nav>
+
+
+  </div>
+
+  <script>
+  const password = "3458";
+  const PASSWORD_KEY = "admin_password";
+
+  // localStorage에 저장된 비밀번호 확인
+  const savedPassword = localStorage.getItem(PASSWORD_KEY);
+
+  if (savedPassword !== password) {
+    const input = prompt("현관문(안쪽) 비밀번호를 입력하세요:");
+
+    if (input !== password) {
+      alert("비밀번호가 틀렸습니다. 페이지를 닫습니다.");
+      window.close();  // 브라우저가 허용하지 않으면 아래로 대체
+      document.body.innerHTML = "<h2>접근이 차단되었습니다.</h2>";
+    } else {
+      // 올바른 비밀번호면 localStorage에 저장
+      localStorage.setItem(PASSWORD_KEY, password);
+    }
+  }
+
+
+ document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const file1 = document.getElementById("file1").files[0];
+    const resultCombined = document.getElementById("resultCombined");
+
+    // 결과 초기화
+    resultCombined.innerHTML = "";
+
+    if (!file1) {
+      alert("파일 등록해주세요.");
+      return;
+    }
+
+    const formData = new FormData();
+    if(file1){
+        formData.append("file1", file1);
+    }
+
+    alert('정상 처리되었습니다. 결과를 생성 중 입니다.');
+
+    let data;
+    try {
+      const res = await fetch("/upload/week/plus", {
+        method: "POST",
+        body: formData
+      });
+
+        if (!res.ok) {
+        // 200 OK가 아니면 에러 처리
+        alert('이미 등록되었습니다.');
+        return;
+      }
+      data = await res.json();
+    } catch (err) {
+        alert('이미 등록되었습니다.');
+      return;
+    }
+
+
+   });
+  </script>
+</body>
+</html>

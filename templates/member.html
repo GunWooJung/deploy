@@ -142,6 +142,8 @@
     <nav>
       <a href="/admin-member" class="active">회원관리</a>
       <a href="/admin-manage">일정산</a>
+      <a href="/admin-week">주 정산</a>
+      <a href="/admin-week-plus">주 정산 소급 적용</a>
     </nav>
 
     <h3>회원 목록</h3>
@@ -152,6 +154,7 @@
         <tr>
           <th>번호</th>
           <th>이름</th>
+          <th>아이디</th>
           <th>오토바이 일 이용료</th>
           <th>저장</th>
         </tr>
@@ -161,6 +164,7 @@
           <tr>
             <td>{{ member.id }}</td>
             <td>{{ member.name }}</td>
+            <td>{{ member.user_id }}</td>
             <td>
               <input type="number" name="moto_fee" value="{{ member.moto_fee }}" data-member-id="{{ member.id }}"/>원
             </td>
@@ -210,8 +214,15 @@
         return;
       }
 
+       const newId = prompt("회원의 아이디를 입력하세요:");
+        if (newId === null) return;
+        const trimmedId = newId.trim();
+        if (trimmedId.length === 0) {
+          alert('아이디를 입력해주세요.');
+          return;
+        }
       try {
-        const response = await fetch(`/member/add?name=${encodeURIComponent(trimmedName)}`, {
+        const response = await fetch(`/member/add?name=${encodeURIComponent(trimmedName)}&user_id=${encodeURIComponent(trimmedId)}`, {
           method: 'GET' // 혹은 백엔드가 POST를 요구하면 'POST'로 변경
         });
 

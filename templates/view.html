@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>개인 주 정산</title>
+  <style>
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: #fff;
+      padding: 20px 30px 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-sizing: border-box;
+      text-align: center;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      padding: 30px;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    input, button {
+      padding: 8px 12px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin: 5px;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .result-box {
+      margin-top: 20px;
+      text-align: left;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      font-size: 16px;
+    }
+    th {
+      background-color: #3498db;
+      color: white;
+    }
+    tbody tr:hover {
+      background-color: #f1f7fc;
+    }
+    h3 {
+      margin-bottom: 20px;
+      color: #34495e;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body>
+  <div class="container">
+    <h3>라이더 정산 조회</h3>
+
+    <div>
+      <br><hr><br>
+      조회 날짜 선택 (해당 날짜가 포함된 "수요일~화요일 주" 가 선택됩니다.)<br><br>
+      <input id="weekPicker" placeholder="주 선택" readonly style="width: 200px;" /><br><br>
+      선택된 날짜 : <div id="weekRangeDisplay" style="margin-top: 8px; font-weight: bold;">없음</div>
+      <br><br>
+    </div>
+
+    <input type="text" id="riderIdInput" placeholder="라이더 ID 입력" />
+    <button onclick="fetchRiderSummary()">확인</button>
+
+    <div class="result-box" id="riderSummaryResult">
+      <!-- 결과가 여기에 표시됩니다 -->
+    </div>
+  </div>
+
+  <script>
+    async function fetchRiderSummary() {
+      const riderId = document.getElementById("riderIdInput").value.trim();
+      const resultBox = document.getElementById("riderSummaryResult");
+      if (startDateGlobal == null || endDateGlobal == null) {
+        alert('주(주중 아무 날짜)를 선택하세요.');
+        return;
+      }
+      if (!riderId) {
+        alert('라이더 ID를 입력하세요.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/rider-summary?rider_id=${encodeURIComponent(riderId)}&start=${startDateGlobal}&end=${endDateGlobal}`);
+        if (!res.ok) throw new Error("조회 실패");
+
+        const resJson = await res.json();
+        if (resJson.status !== "success") {
+          alert('오류 : 데이터가 존재하지 않습니다. 날짜와 ID를 확인해주세요.');
+          return;
+        }
+
+        const row = resJson.data;
+
+        // 추가 지급 계산 함수
+        const addByCount = (count) => {
+          let s = 0;
+          if (count >= 200) s += 20000;
+          if (count >= 250) s += 30000;
+          if (count >= 300) s += 30000;
+          if (count >= 350) s += 40000;
+          if (count >= 400) s += 40000;
+          if (count >= 450) s += 50000;
+          if (count >= 500) s += 50000;
+          return s;
+        };
+
+        const addByCountResult = addByCount(row.count);
+        const government = Math.floor(0.049 * (row.totalA + row.totalB + addByCountResult));
+        const totalSum = row.totalA + row.totalB + addByCountResult - government - row.totalD;
+
+        // 콤마 찍는 함수 (숫자형일 때만)
+        const fmt = num => (typeof num === 'number' ? num.toLocaleString() : num);
+
+        resultBox.innerHTML = `
+          <table>
+            <thead>
+              <tr><th>항목</th><th>값</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>라이더명</td><td>${row.name}</td></tr>
+              <tr><td>배달 건수</td><td>${fmt(row.count)}건</td></tr>
+              <tr><td>배달료 A</td><td>${fmt(row.totalA)} 원</td></tr>
+              <tr><td>추가 지급(프로모션, 할증) B</td><td>${fmt(row.totalB)} 원</td></tr>
+              <tr><td>추가 지급 (건수당) C</td><td>${fmt(addByCountResult)} 원</td></tr>
+              <tr><td>4.9% 세금(고용,산재,소득세,주민세)<br> 0.049*(A+B+C)=D</td><td>${fmt(government)} 원</td></tr>
+              <tr><td>시간제 보험료 E</td><td>${fmt(row.totalD)} 원</td></tr>
+              <tr style="font-weight:bold; background:#eaf4fc;">
+                <td>총 합계 (A+B+C-D-E)</td>
+                <td>${fmt(totalSum)} 원</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+
+      } catch (err) {
+        alert('오류 : 데이터가 존재하지 않습니다. 날짜와 ID를 확인해주세요.');
+        console.error(err);
+      }
+    }
+
+    // 전역 변수 선언
+    let startDateGlobal = null;
+    let endDateGlobal = null;
+
+    // 요일 이름
+    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
+    // 날짜 포맷 (표시용)
+    function format(date) {
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${mm}.${dd} (${weekdays[date.getDay()]})`;
+    }
+
+    // 날짜 포맷 (YYYYMMDD 서버용)
+    function toYMD(date) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}${mm}${dd}`;
+    }
+
+    const weekPicker = flatpickr("#weekPicker", {
+      dateFormat: "Y-m-d",
+      defaultDate: '주 선택',
+      onChange: handleWeekChange
+    });
+
+    // 공통 핸들러 함수로 분리
+    async function handleWeekChange(selectedDates) {
+      const start = new Date(selectedDates[0]);
+      const day = start.getDay();
+
+      // 기준일: 수요일
+      const adjust = (3 - day + 7) % 7;
+      start.setDate(start.getDate() + adjust);
+      // 시작일을 1주일 전으로 이동
+      start.setDate(start.getDate() - 7);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6); // 다음 주 화요일
+
+      startDateGlobal = toYMD(start);
+      endDateGlobal = toYMD(end);
+
+      document.getElementById("weekRangeDisplay").textContent = `${format(start)} ~ ${format(end)}`;
+    }
+  </script>
+</body>
+</html>

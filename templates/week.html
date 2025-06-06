@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>주 정산</title>
+  <style>
+    /* 기존 스타일 유지 */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      background: #fff;
+      padding: 20px 30px 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-sizing: border-box;
+      text-align: center;
+    }
+    nav {
+      background-color: #3498db;
+      padding: 12px 20px;
+      display: flex;
+      gap: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0 0 40px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      flex-grow: 1;
+      text-align: center;
+    }
+    nav a.active {
+      background-color: #2980b9;
+    }
+    nav a:hover {
+      background-color: #2980b9;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      padding: 30px;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px 14px;
+      text-align: center;
+      white-space: nowrap; /* 줄바꿈 방지 */
+    }
+    th {
+      background-color: #ecf0f1;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    input[type="number"] {
+      width: 80px;
+      padding: 4px;
+      text-align: right;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .btn-small {
+      min-width: 70px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #34495e;
+      text-align: center;
+    }
+    .btn-add {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      float: right;
+    }
+    @media (max-width: 640px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      th {
+        display: none;
+      }
+      td {
+        border: none;
+        padding: 8px 0;
+        text-align: left;
+      }
+      td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: inline-block;
+        width: 100px;
+      }
+      .btn-add {
+        float: none;
+        display: block;
+        margin: 10px auto 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/admin-member">회원관리</a>
+      <a href="/admin-manage" >일정산</a>
+      <a href="/admin-week" class="active">주 정산</a>
+      <a href="/admin-week-plus">주 정산 소급 적용</a>
+    </nav>
+ <!-- 전체를 감싸는 컨테이너를 사용 -->
+    <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; min-height: 20vh;">
+      <form id="uploadForm">
+        <div style="margin-bottom: 20px;">
+          <label>주 정산 파일 : </label>
+          <input type="file" id="file1" name="file1" accept=".xlsx" required/>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+          <button type="submit">업로드</button></div>
+      </form>
+                <div><br><br>주 정산 엑셀 데이터 등록은 딱 1번만 하면 됩니다.</div>
+    </div>
+    <div>
+      <br><hr><br>조회 날짜 선택 (해당 날짜가 포함된 "수요일~화요일 주" 가 선택됩니다.)<br><br>
+      <input id="weekPicker" placeholder="주 선택" readonly style="width: 200px;" /><br><br>
+      선택된 날짜 : <div id="weekRangeDisplay" style="margin-top: 8px; font-weight: bold;">없음</div>
+      <br><br>
+    </div>
+
+    <h3>집계 결과</h3>
+    <div id="resultCombined" class="result-box">
+      <!-- 일정산 + 보험료 결과 영역 -->
+    </div>
+
+  </div>
+
+  <script>
+  const password = "3458";
+  const PASSWORD_KEY = "admin_password";
+
+  // localStorage에 저장된 비밀번호 확인
+  const savedPassword = localStorage.getItem(PASSWORD_KEY);
+
+  if (savedPassword !== password) {
+    const input = prompt("현관문(안쪽) 비밀번호를 입력하세요:");
+
+    if (input !== password) {
+      alert("비밀번호가 틀렸습니다. 페이지를 닫습니다.");
+      window.close();  // 브라우저가 허용하지 않으면 아래로 대체
+      document.body.innerHTML = "<h2>접근이 차단되었습니다.</h2>";
+    } else {
+      // 올바른 비밀번호면 localStorage에 저장
+      localStorage.setItem(PASSWORD_KEY, password);
+    }
+  }
+
+
+   document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const file1 = document.getElementById("file1").files[0];
+    const resultCombined = document.getElementById("resultCombined");
+
+    // 결과 초기화
+    resultCombined.innerHTML = "";
+
+    if (!file1) {
+      alert("파일 등록해주세요.");
+      return;
+    }
+
+    const formData = new FormData();
+    if(file1){
+        formData.append("file1", file1);
+    }
+
+    let data;
+    try {
+      const res = await fetch("/upload/week", {
+        method: "POST",
+        body: formData
+      });
+
+          if (!res.ok) {
+        // 200 OK가 아니면 에러 처리
+        alert('이미 등록되었습니다.');
+        return;
+      }
+      data = await res.json();
+     alert('데이터가 등록되었습니다.');
+     location.reload();
+    } catch (err) {
+       alert('이미 등록되었습니다.');
+      return;
+    }
+   });
+
+
+
+// 전역 변수 선언
+let startDateGlobal = null;
+let endDateGlobal = null;
+
+// 요일 이름
+const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
+// 날짜 포맷 (표시용)
+function format(date) {
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${mm}.${dd} (${weekdays[date.getDay()]})`;
+}
+
+// 날짜 포맷 (YYYYMMDD 서버용)
+function toYMD(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}${mm}${dd}`;
+}
+
+const weekPicker = flatpickr("#weekPicker", {
+  dateFormat: "Y-m-d",
+  defaultDate: new Date(),
+  onChange: handleWeekChange
+});
+
+// 공통 핸들러 함수로 분리
+async function handleWeekChange(selectedDates) {
+  const start = new Date(selectedDates[0]);
+  const day = start.getDay();
+
+  // 기준일: 수요일
+  const adjust = (3 - day + 7) % 7;
+  start.setDate(start.getDate() + adjust);
+// 시작일을 1주일 전으로 이동
+start.setDate(start.getDate() - 7);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6); // 다음 주 화요일
+
+  startDateGlobal = toYMD(start);
+  endDateGlobal = toYMD(end);
+
+  document.getElementById("weekRangeDisplay").textContent = `${format(start)} ~ ${format(end)}`;
+
+  // ✅ 서버에서 데이터 불러오기
+  try {
+    const res = await fetch(`/week-summary?start=${startDateGlobal}&end=${endDateGlobal}`);
+    if (!res.ok) throw new Error("조회 실패");
+
+    const resJson = await res.json();
+    if (resJson.status === "success") {
+      renderWeekTable(resJson.data);
+    } else {
+      document.getElementById("resultCombined").innerHTML = "<div>데이터가 없습니다.</div>";
+    }
+  } catch (err) {
+    document.getElementById("resultCombined").innerHTML = "<div>데이터를 불러오지 못했습니다.</div>";
+    console.error(err);
+  }
+}
+
+// ✅ defaultDate에도 반영되게 수동으로 한 번 실행
+handleWeekChange([weekPicker.selectedDates[0]]);
+
+
+// ✅ 렌더링 함수
+function renderWeekTable(data) {
+  const resultBox = document.getElementById("resultCombined");
+  if (!Array.isArray(data) || data.length === 0) {
+    resultBox.innerHTML = "<div>해당 주간 데이터가 없습니다.</div>";
+    return;
+  }
+
+  let html = `
+    <table>
+      <thead>
+        <tr>
+          <th>라이더명</th>
+          <th>배달 건수</th>
+          <th>배달료 A</th>
+          <th>추가 지급(프로모션, 할증) B</th>
+          <th>추가 지급(건수 당)  C</th>
+          <th>0.049*(A+B+C) 4.9% 세금(고용,산재,소득세,주민세)=D</th>
+          <th>시간제 보험료 E</th>
+          <th>총 합계(A+B+C-D-E)</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  for (const row of data) {
+
+    const addByCount = (count) => {
+      let s = 0;
+
+      if (count >= 200) s += 20000;
+      if (count >= 250) s += 30000;
+      if (count >= 300) s += 30000;
+      if (count >= 350) s += 40000;
+      if (count >= 400) s += 40000;
+      if (count >= 450) s += 50000;
+      if (count >= 500) s += 50000;
+
+      return s;
+    };
+
+const government = Math.floor(0.049*(row.totalA + row.totalB + addByCount(row.count)));
+
+
+    const total = row.totalA+row.totalB+addByCount(row.count)-government-row.totalD;
+
+    html += `
+      <tr>
+        <td>${row.name}</td>
+        <td>${row.count.toLocaleString()}</td>
+        <td>${row.totalA.toLocaleString()}원</td>
+        <td>${row.totalB.toLocaleString()}원</td>
+        <td>${addByCount(row.count).toLocaleString()}원</td>
+        <td>${government.toLocaleString()}원</td>
+        <td>${row.totalD.toLocaleString()}원</td>
+        <td>${total.toLocaleString()}원</td>
+      </tr>
+    `;
+  }
+
+  html += `</tbody></table>`;
+  resultBox.innerHTML = html;
+}
+
+  </script>
+</body>
+</html>

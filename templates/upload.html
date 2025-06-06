@@ -142,8 +142,10 @@
 
   <div class="container">
     <nav>
-      <a href="/admin-member" class="{% if active_tab == 'member' %}active{% endif %}">회원관리</a>
-      <a href="/admin-manage" class="{% if active_tab == 'manage' %}active{% endif %}">일정산</a>
+      <a href="/admin-member">회원관리</a>
+      <a href="/admin-manage" class="active">일정산</a>
+      <a href="/admin-week">주 정산</a>
+      <a href="/admin-week-plus">주 정산 소급 적용</a>
     </nav>
 
     <!-- 전체를 감싸는 컨테이너를 사용 -->
@@ -151,11 +153,11 @@
       <form id="uploadForm">
         <div style="margin-bottom: 20px;">
           <label>일 정산 파일 : </label>
-          <input type="file" id="file1" name="file1" accept=".xlsx" required />
+          <input type="file" id="file1" name="file1" accept=".xlsx" />
         </div>
         <div style="margin-bottom: 20px;">
           <label>보험료 파일 : </label>
-          <input type="file" id="file2" name="file2" accept=".xlsx" required />
+          <input type="file" id="file2" name="file2" accept=".xlsx"  />
         </div>
         <div style="text-align: center; margin-top: 30px;">
           <button type="submit">업로드</button>
@@ -211,14 +213,20 @@
     // 결과 초기화
     resultCombined.innerHTML = "";
 
-    if (!file1 || !file2) {
-      alert("두 파일 모두 선택해주세요.");
+    if (!file1 && !file2) {
+      alert("파일 등록해주세요.");
       return;
     }
 
     const formData = new FormData();
-    formData.append("file1", file1);
-    formData.append("file2", file2);
+    if(file1){
+        formData.append("file1", file1);
+    }
+    if(file2){
+        formData.append("file2", file2);
+    }
+
+    alert('정상 처리되었습니다. 결과를 생성 중 입니다.');
 
     let data;
     try {
@@ -248,6 +256,7 @@
 
         // 라이더 영역 생성
         const riderSection = document.createElement("div");
+
         const riderTitle = document.createElement("h4");
         riderTitle.textContent = `${rider} (최종 합계: 계산 중...) `;
         riderSection.appendChild(riderTitle);
@@ -257,11 +266,11 @@
         thead.innerHTML = `
           <tr>
             <th>운행일</th>
-            <th>배달처리비</th>
-            <th>세금 제외</th>
-            <th>보험료</th>
-             <th>오토바이 요금 (<span>${formatCurrency(moto_fee)} × </span><input type="number" value="${days}" min="1" class="daysInput" style="width:20px; display:inline-block;" />&nbsp;일)</th>
-            <th>최종 금액</th>
+            <th>배달처리비=A</th>
+            <th>4.9% 세금(고용,산재,소득세,주민세)=B</th>
+            <th>시간제 보험=C</th>
+             <th>오토바이 요금 (<span>${formatCurrency(moto_fee)} × </span><input type="number" value="${days}" min="1" class="daysInput" style="width:40px; display:inline-block;" />&nbsp;일)=D</th>
+            <th>일 합계 금액(A-B-C-D)</th>
           </tr>
         `;
         table.appendChild(thead);
@@ -283,7 +292,7 @@
             const 배달처리비 = Number(record["배달처리비"]) || 0;
             const 보험료 = Number(record["보험료 발생금액(원)"]) || 0;
 
-            const afterTax = Math.floor(배달처리비 * (1 - 0.049));
+            const afterTax = Math.floor(배달처리비 *  0.049);
             const afterInsurance = afterTax - 보험료;
             const motoFeeTotal = moto_fee * currentDays;
             const afterMoto = afterInsurance - motoFeeTotal;
@@ -301,7 +310,7 @@
             tbody.appendChild(tr);
           }
 
-          riderTitle.firstChild.textContent = `${rider} (최종 합계: ${formatCurrency(finalSum)})`;
+          riderTitle.firstChild.textContent = `${rider} (전체 합계: (A-B-C-D) = ${formatCurrency(finalSum)})  `;
         }
 
         // 초기 계산
