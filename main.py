@@ -188,7 +188,7 @@ async def rget_week_summary(
         return JSONResponse(content={"status": "success"})
     start_m = start[:6]  # 시작 날짜 문자열의 앞 6자리 (예: '202506')
     end_m = end[:6]  # 끝 날짜 문자열의 앞 6자리
-    if start_m != end_m and not week_rows and week_rows[0]['file_count'] != 2:
+    if start_m != end_m and week_rows and week_rows[0]['file_count'] != 2:
         return JSONResponse(content={"status": "fail"})
 
 
@@ -613,7 +613,7 @@ async def get_week_summary(start: str = Query(...), end: str = Query(...)):
         return JSONResponse(content={"status": "success"})
     start_m = start[:6]  # 시작 날짜 문자열의 앞 6자리 (예: '202506')
     end_m = end[:6]  # 끝 날짜 문자열의 앞 6자리
-    if start_m != end_m and week_rows[0]['file_count'] != 2:
+    if start_m != end_m and week_rows and week_rows[0]['file_count'] != 2:
         return JSONResponse(content={"status": "fail"})
 
 
@@ -665,7 +665,7 @@ async def get_week_summary(start: str = Query(...), end: str = Query(...)):
     if week_rows:
         start_m = start[:6]
         end_m = end[:6]
-        if start_m != end_m and week_rows[0]['file_count'] != 2:
+        if start_m != end_m and week_rows and week_rows[0]['file_count'] != 2:
             return JSONResponse(content={"status": "fail"})
 
         return JSONResponse(content={
