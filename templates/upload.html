@@ -154,11 +154,11 @@
       <form id="uploadForm">
         <div style="margin-bottom: 20px;">
           <label>일 정산 파일 : </label>
-          <input type="file" id="file1" name="file1" accept=".xlsx" />
+          <input type="file" id="file1" name="file1" accept=".xlsx" required />
         </div>
         <div style="margin-bottom: 20px;">
           <label>보험료 파일 : </label>
-          <input type="file" id="file2" name="file2" accept=".xlsx"  />
+          <input type="file" id="file2" name="file2" accept=".xlsx"  required />
         </div>
         <div style="text-align: center; margin-top: 30px;">
           <button type="submit">업로드</button>
@@ -214,7 +214,7 @@
     // 결과 초기화
     resultCombined.innerHTML = "";
 
-    if (!file1 && !file2) {
+    if (!file1 || !file2) {
       alert("파일 등록해주세요.");
       return;
     }
