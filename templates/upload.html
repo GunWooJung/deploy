@@ -294,9 +294,8 @@
             const 보험료 = Number(record["보험료 발생금액(원)"]) || 0;
 
             const afterTax = Math.floor(배달처리비 *  0.049);
-            const afterInsurance = afterTax - 보험료;
             const motoFeeTotal = moto_fee * currentDays;
-            const afterMoto = 배달처리비 - afterTax - motoFeeTotal;
+            const afterMoto = 배달처리비 - afterTax - 보험료 - motoFeeTotal;
 
             finalSum += afterMoto;
 
