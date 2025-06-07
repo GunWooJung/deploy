@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>주 정산</title>
+  <title>배달비 관리자</title>
   <style>
     /* 기존 스타일 유지 */
     .container {
@@ -226,7 +226,6 @@
       <a href="/admin-manage" >일정산</a>
       <a href="/admin-week" class="active">주 정산</a>
       <a href="/admin-add">주 정산 기타 등록</a>
-      <a href="/admin-week-plus">주 정산 소급 적용</a>
     </nav>
  <!-- 전체를 감싸는 컨테이너를 사용 -->
     <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; min-height: 20vh;">
@@ -426,8 +425,8 @@ function renderWeekTable(data) {
         <div class="item"><span class="label">라이더명:</span> <span class="value">${row.name}</span></div>
         <div class="item"><span class="label">배달 건수:</span> <span class="value">${row.count.toLocaleString()} 건</span></div>
         <div class="item"><span class="label">A 배달료:</span> <span class="value">${row.totalA.toLocaleString()} 원</span></div>
-        <div class="item"><span class="label">B 추가 지급(프로모션, 할증):</span> <span class="value">${row.totalB.toLocaleString()} 원</span></div>
-        <div class="item"><span class="label">C 추가 지급(건수 당):</span> <span class="value">${addC.toLocaleString()} 원</span></div>
+        <div class="item"><span class="label">B 추가 지급(과적,조리대기,기피지역):</span> <span class="value">${row.totalB.toLocaleString()} 원</span></div>
+        <div class="item"><span class="label">C 추가 지급(건수 프로모션):</span> <span class="value">${addC.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">D 4.9% 세금 = 0.049*(A+B+C) :</span> <span class="value">${government.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">E 시간제 보험료:</span> <span class="value">${row.totalD.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">기타(${extraName}):</span> <span class="value">${extraSum.toLocaleString()} 원</span></div>

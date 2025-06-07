@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>배달비 계산</title>
+  <title>배달비 관리자</title>
   <style>
     .container {
       width: 100%;
@@ -146,7 +146,6 @@
       <a href="/admin-manage" class="active">일정산</a>
       <a href="/admin-week">주 정산</a>
       <a href="/admin-add">주 정산 기타 등록</a>
-      <a href="/admin-week-plus">주 정산 소급 적용</a>
     </nav>
 
     <!-- 전체를 감싸는 컨테이너를 사용 -->
@@ -268,9 +267,9 @@
           <tr>
             <th>운행일</th>
             <th>배달처리비=A</th>
-            <th>4.9% 세금(고용,산재,소득세,주민세)=B</th>
-            <th>시간제 보험=C</th>
-             <th>오토바이 요금 (<span>${formatCurrency(moto_fee)} × </span><input type="number" value="${days}" min="1" class="daysInput" style="width:40px; display:inline-block;" />&nbsp;일)=D</th>
+            <th>4.9%=B</th>
+            <th>시보=C</th>
+             <th>오토 (<span>${formatCurrency(moto_fee)} × </span><input type="number" value="${days}" min="1" class="daysInput" style="width:40px; display:inline-block;" />&nbsp;일)=D</th>
             <th>일 합계 금액(A-B-C-D)</th>
           </tr>
         `;

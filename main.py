@@ -448,10 +448,6 @@ async def form_page2(request: Request):
     return templates.TemplateResponse("week.html", {"request": request})
 
 
-@app.get("/admin-week-plus", response_class=HTMLResponse)
-async def form_page3(request: Request):
-    return templates.TemplateResponse("weekplus.html", {"request": request})
-
 
 def parse_amount(value):
     if pd.isna(value) or str(value).strip() == '-':
