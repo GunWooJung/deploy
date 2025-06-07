@@ -67,6 +67,7 @@
       margin-bottom: 20px;
       color: #34495e;
     }
+
   </style>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -114,7 +115,7 @@
           return;
         }
 
-        const row = resJson.data;
+        const row = resJson.data[0];
 
         // 추가 지급 계산 함수
         const addByCount = (count) => {
@@ -131,7 +132,19 @@
 
         const addByCountResult = addByCount(row.count);
         const government = Math.floor(0.049 * (row.totalA + row.totalB + addByCountResult));
-        const totalSum = row.totalA + row.totalB + addByCountResult - government - row.totalD;
+
+
+        const extraName = row.extra_list.map(item => item.extra_description).join(', ');
+
+        const extraSum = row.extra_list.reduce((sum, item) => {
+        const amount = Number(item.extra_amount);
+          return item.extra_type === 'plus'
+            ? sum + amount
+            : sum - amount;
+        }, 0);
+
+
+        const totalSum = row.totalA + row.totalB + addByCountResult - government - row.totalD + extraSum;
 
         // 콤마 찍는 함수 (숫자형일 때만)
         const fmt = num => (typeof num === 'number' ? num.toLocaleString() : num);
@@ -144,13 +157,14 @@
             <tbody>
               <tr><td>라이더명</td><td>${row.name}</td></tr>
               <tr><td>배달 건수</td><td>${fmt(row.count)}건</td></tr>
-              <tr><td>배달료 A</td><td>${fmt(row.totalA)} 원</td></tr>
-              <tr><td>추가 지급(프로모션, 할증) B</td><td>${fmt(row.totalB)} 원</td></tr>
-              <tr><td>추가 지급 (건수당) C</td><td>${fmt(addByCountResult)} 원</td></tr>
-              <tr><td>4.9% 세금(고용,산재,소득세,주민세)<br> 0.049*(A+B+C)=D</td><td>${fmt(government)} 원</td></tr>
-              <tr><td>시간제 보험료 E</td><td>${fmt(row.totalD)} 원</td></tr>
+              <tr><td>A 배달료</td><td>${fmt(row.totalA)} 원</td></tr>
+              <tr><td>B 추가 지급(프로모션, 할증) </td><td>${fmt(row.totalB)} 원</td></tr>
+              <tr><td>C 추가 지급 (건수당)</td><td>${fmt(addByCountResult)} 원</td></tr>
+              <tr><td>D 4.9% 세금(고용,산재,소득세,주민세)<br>= 0.049*(A+B+C)</td><td>${fmt(government)} 원</td></tr>
+              <tr><td>E 시간제 보험료</td><td>${fmt(row.totalD)} 원</td></tr>
+              <tr><td>기타(${extraName}):</td><td>${fmt(extraSum)} 원</td></tr>
               <tr style="font-weight:bold; background:#eaf4fc;">
-                <td>총 합계 (A+B+C-D-E)</td>
+                <td>총 합계 (A+B+C-D-E ± 기타)</td>
                 <td>${fmt(totalSum)} 원</td>
               </tr>
             </tbody>
@@ -193,7 +207,9 @@
 
     // 공통 핸들러 함수로 분리
     async function handleWeekChange(selectedDates) {
-      const start = new Date(selectedDates[0]);
+const start = new Date(selectedDates[0]);
+start.setDate(start.getDate() + 1); // 하루 전으로 이동
+
       const day = start.getDay();
 
       // 기준일: 수요일

@@ -1,9 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Literal
 
 import pymysql
-from fastapi import FastAPI, File, UploadFile, Request, Form, Query, Path, Body
+from fastapi import FastAPI, File, UploadFile, Request, Query, Path, Body, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 import pandas as pd
@@ -11,12 +11,12 @@ import msoffcrypto
 import io
 import re
 from pydantic import BaseModel
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.responses import RedirectResponse
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+
+
 # DB 연결 함수
 
 
@@ -38,36 +38,218 @@ def admin_member(request: Request):
     })
 
 
+@app.get("/admin-add", response_class=HTMLResponse)
+def admin_member(request: Request):
+    conn = get_conn()
+    members = []
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT id, name, user_id FROM test2.member")
+        results = cursor.fetchall()
+        for row in results:
+            members.append({
+                "id": row["id"],
+                "name": row["name"],
+                "user_id": row["user_id"]
+            })
+    conn.close()
+    return templates.TemplateResponse("add.html", {
+        "request": request,
+        "members": results
+    })
+
+
+class ExtraSettlementData(BaseModel):
+    start_date: str  # YYYYMMDD 형식
+    end_date: str  # YYYYMMDD 형식
+    rider_id: str
+    rider_name: str
+    description: str
+    amount: int
+    type: Literal["plus", "minus"]  # 'plus' 또는 'minus'만 허용
+
+
+@app.post("/admin-add-data")
+def admin_member_add_data(data: ExtraSettlementData):  # Request 대신 Pydantic 모델로 직접 데이터 받기
+    conn = None  # conn 초기화
+    try:
+        conn = get_conn()
+        with conn.cursor() as cursor:
+            # SQL INSERT 쿼리
+            # weekly_extra_settlement 테이블명과 컬럼명은 실제 데이터베이스 스키마에 맞게 조정하세요.
+            sql = """
+                      INSERT INTO test2.add 
+                      (user_id, name, start_date, end_date, extra_description, extra_amount, extra_type)
+                      VALUES (%s, %s, %s, %s, %s, %s, %s);
+                      """
+            cursor.execute(sql, (
+                data.rider_id,  # `user_id` 컬럼 (VARCHAR)
+                data.rider_name,  # `name` 컬럼 (VARCHAR)
+                data.start_date,  # `start_date` 컬럼 (DATE)
+                data.end_date,  # `end_date` 컬럼 (DATE)
+                data.description,  # `extra_description` 컬럼
+                data.amount,  # `extra_amount` 컬럼
+                data.type  # `extra_type` 컬럼
+            ))
+            conn.commit()
+        return JSONResponse(content={"message": "주 정산 기타 항목이 성공적으로 등록되었습니다."}, status_code=200)
+    except Exception as e:
+        if conn:
+            conn.rollback()  # 오류 발생 시 변경사항 롤백
+        raise HTTPException(status_code=500, detail=f"데이터 등록 중 오류 발생: {str(e)}")
+    finally:
+        if conn:
+            conn.close()  # 데이터베이스 연결 닫기
+
+
+@app.delete("/admin-delete-extra-item")
+def admin_member_del_data(
+        eid: int = Query(...)
+):  # Request 대신 Pydantic 모델로 직접 데이터 받기
+    conn = None  # conn 초기화
+    try:
+        conn = get_conn()
+        with conn.cursor() as cursor:
+            # SQL INSERT 쿼리
+            # weekly_extra_settlement 테이블명과 컬럼명은 실제 데이터베이스 스키마에 맞게 조정하세요.
+            sql = """
+                      delete from test2.add where id = %s;
+                      """
+            cursor.execute(sql, (
+                eid
+            ))
+            conn.commit()
+        return JSONResponse(content={"message": "주 정산 기타 항목이 성공적으로 삭제되었습니다."}, status_code=200)
+    except Exception as e:
+        if conn:
+            conn.rollback()  # 오류 발생 시 변경사항 롤백
+        raise HTTPException(status_code=500, detail=f"데이터 등록 중 오류 발생: {str(e)}")
+    finally:
+        if conn:
+            conn.close()  # 데이터베이스 연결 닫기
+
+
+@app.get("/get-extra-items")
+def admin_member_add_data_extra(
+        start_date: str = Query(..., description="조회 시작 날짜 (YYYYMMDD)"),
+        end_date: str = Query(..., description="조회 종료 날짜 (YYYYMMDD)")
+):
+    conn = get_conn()
+
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT * FROM test2.add where start_date >= %s and end_date <= %s",
+                       (start_date, end_date))
+        results = cursor.fetchall()
+    conn.close()
+    return results
+
+
 @app.get("/rider-summary")
-async def get_week_summary(
-    rider_id: str = Query(...),
-    start: str = Query(...),
-    end: str = Query(...)
+async def rget_week_summary(
+        rider_id: str = Query(...),
+        start: str = Query(...),
+        end: str = Query(...)
 ):
     try:
-        # 1. 문자열 "20121212" -> datetime.date 객체로 변환
         start_date = datetime.strptime(start, "%Y%m%d").date()
         end_date = datetime.strptime(end, "%Y%m%d").date()
-
-        # 2. 원하는 "YYYY-MM-DD" 문자열로 변환
         start_str = start_date.strftime("%Y-%m-%d")
         end_str = end_date.strftime("%Y-%m-%d")
-
     except ValueError:
         return {"error": "잘못된 날짜 형식입니다. YYYYMMDD 형식이어야 합니다."}
+
     conn = get_conn()
     with conn.cursor() as cursor:
-        cursor.execute("SELECT user_id, name, sum(count) as count, sum(totalA) as totalA, sum(totalB) as totalB,"
-                       "sum(totalD) as totalD "
-                       "FROM test2.week where start_date >= %s and end_date <= %s and user_id = %s group by user_id, "
-                       "name",
-                       (start_str, end_str, rider_id))
-        results = cursor.fetchone()
-        results = convert_row(results)
+        # 주간 데이터 (집계)
+        cursor.execute("""
+               SELECT user_id, name,
+                      COUNT(*) AS file_count,
+                      SUM(count) AS count,
+                      SUM(totalA) AS totalA,
+                      SUM(totalB) AS totalB,
+                      SUM(totalD) AS totalD
+               FROM test2.week
+               WHERE start_date >= %s AND end_date <= %s and user_id = %s
+               GROUP BY user_id, name
+           """, (start_str, end_str, rider_id))
+        week_rows = cursor.fetchall()
+        week_rows = convert_rows_list(week_rows)
+        # 기타항목 데이터 (그대로 리스트로)
+        cursor.execute("""
+               SELECT user_id, extra_description, extra_amount, extra_type
+               FROM `add`
+               WHERE start_date >= %s AND end_date <= %s and user_id = %s
+           """, (start_str, end_str, rider_id))
+        extra_rows = cursor.fetchall()
+        extra_rows = convert_rows_list(extra_rows)
     conn.close()
-    print(results)
-    return JSONResponse(content={"status": "success", "data": results})
+    print(week_rows)
+    print(extra_rows)
+    if not week_rows and not extra_rows:
+        return JSONResponse(content={"status": "success"})
+    start_m = start[:6]  # 시작 날짜 문자열의 앞 6자리 (예: '202506')
+    end_m = end[:6]  # 끝 날짜 문자열의 앞 6자리
+    if start_m != end_m and not week_rows and week_rows[0]['file_count'] != 2:
+        return JSONResponse(content={"status": "fail"})
 
+
+    # 1) extra 항목을 user_id 기준으로 묶기
+    extra_map = {}
+    for row in extra_rows:
+        uid = row["user_id"]
+        entry = {
+            "extra_description": row["extra_description"],
+            "extra_amount": row["extra_amount"],
+            "extra_type": row["extra_type"]
+        }
+        extra_map.setdefault(uid, []).append(entry)
+
+    # 2) user_id를 기준으로 week_rows와 extra_map 병합
+    results_map = {}
+
+    # week_rows에 있는 데이터 먼저 넣기
+    for row in week_rows:
+        uid = row["user_id"]
+        # 기본 row 복사 및 extra_list 추가
+        row_copy = dict(row)  # 복사본 생성 (원본 건들지 않기 위해)
+        row_copy["extra_list"] = extra_map.get(uid, [])
+        results_map[uid] = row_copy
+    conn = get_conn()
+    # extra_rows에만 있는 user_id 처리 (week_rows에 없는 경우)
+    for uid, extra_list in extra_map.items():
+        if uid not in results_map:
+
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                              SELECT name FROM test2.member where user_id = %s
+                          """, uid)
+                uname = cursor.fetchone()
+
+            results_map[uid] = {
+                "user_id": uid,
+                "name": uname['name'],  # 이름 정보가 없다면 빈 문자열, 필요하면 다른 방법으로 넣기
+                "count": 0,
+                "totalA": 0,
+                "totalB": 0,
+                "totalD": 0,
+                "file_count": 0,
+                "extra_list": extra_list
+            }
+    conn.close()
+    results = list(results_map.values())
+
+    if week_rows:
+        return JSONResponse(content={
+            "status": "success",
+            "file_count": week_rows[0]['file_count'],
+            "data": results
+        })
+    else:
+        # week_rows가 없더라도 extra 있는 라이더는 포함됨
+        return JSONResponse(content={
+            "status": "success",
+            "file_count": 0,
+            "data": results
+        })
 
 
 @app.get("/admin")
@@ -104,13 +286,13 @@ def admin_manage(request: Request):
         "members": members
     })
 
+
 # 회원 추가
 
 
 @app.get("/member/add")
 def add_member(name: str = Query(..., min_length=1),
                user_id: str = Query(..., min_length=1)):
-
     conn = get_conn()
     with conn.cursor() as cursor:
         cursor.execute("INSERT INTO member (name, user_id) VALUES (%s, %s)", (name, user_id))
@@ -127,8 +309,8 @@ class MemberEdit(BaseModel):
 
 @app.put("/member/edit/{mid}")
 def edit_member(
-    mid: int = Path(...),
-    data: MemberEdit = Body(...)
+        mid: int = Path(...),
+        data: MemberEdit = Body(...)
 ):
     conn = get_conn()
     with conn.cursor() as cursor:
@@ -157,8 +339,8 @@ async def fetch_moto_fees():
 
 @app.post("/upload")
 async def upload_excel(
-    file1: Optional[UploadFile] = File(None),
-    file2: Optional[UploadFile] = File(None)
+        file1: Optional[UploadFile] = File(None),
+        file2: Optional[UploadFile] = File(None)
 ):
     if not file1 and not file2:
         return JSONResponse(status_code=400, content={"status": "error", "message": "file1 또는 file2 중 하나는 반드시 필요합니다."})
@@ -288,7 +470,8 @@ async def form_week(file1: UploadFile = File(...)):
     filename = file1.filename
     match = re.match(r"^(\d{8})~(\d{8})", filename)
     if not match:
-        return JSONResponse(status_code=400, content={"status": "error", "message": "파일명은 'YYYYMMDD~YYYYMMDD' 형식으로 시작해야 합니다."})
+        return JSONResponse(status_code=400,
+                            content={"status": "error", "message": "파일명은 'YYYYMMDD~YYYYMMDD' 형식으로 시작해야 합니다."})
 
     start_date, end_date = match.group(1), match.group(2)
 
@@ -333,7 +516,7 @@ async def form_week(file1: UploadFile = File(...)):
         for i in range(fee_start_row, len(df_fee)):
             name_fee = df_fee.iloc[i, 2]  # C열: 이름
             amount_fee = df_fee.iloc[i, 3]  # D열: 금액
-            reason = df_fee.iloc[i, 5]      # F열: 사유
+            reason = df_fee.iloc[i, 5]  # F열: 사유
 
             if pd.isna(name_fee) or pd.isna(amount_fee):
                 continue
@@ -396,28 +579,122 @@ async def form_week(
 @app.get("/week-summary")
 async def get_week_summary(start: str = Query(...), end: str = Query(...)):
     try:
-        # 1. 문자열 "20121212" -> datetime.date 객체로 변환
         start_date = datetime.strptime(start, "%Y%m%d").date()
         end_date = datetime.strptime(end, "%Y%m%d").date()
-
-        # 2. 원하는 "YYYY-MM-DD" 문자열로 변환
         start_str = start_date.strftime("%Y-%m-%d")
         end_str = end_date.strftime("%Y-%m-%d")
-
     except ValueError:
         return {"error": "잘못된 날짜 형식입니다. YYYYMMDD 형식이어야 합니다."}
+
     conn = get_conn()
     with conn.cursor() as cursor:
-        cursor.execute("SELECT user_id, name, sum(count) as count, sum(totalA) as totalA, sum(totalB) as totalB,"
-                       "sum(totalD) as totalD "
-                       "FROM test2.week where start_date >= %s and end_date <= %s group by user_id, name",
-                       (start_str, end_str))
-        results = cursor.fetchall()
-        results = [convert_row(row) for row in results]
+        # 주간 데이터 (집계)
+        cursor.execute("""
+               SELECT user_id, name,
+                      COUNT(*) AS file_count,
+                      SUM(count) AS count,
+                      SUM(totalA) AS totalA,
+                      SUM(totalB) AS totalB,
+                      SUM(totalD) AS totalD
+               FROM test2.week
+               WHERE start_date >= %s AND end_date <= %s
+               GROUP BY user_id, name
+           """, (start_str, end_str))
+        week_rows = cursor.fetchall()
+        week_rows = convert_rows_list(week_rows)
+        # 기타항목 데이터 (그대로 리스트로)
+        cursor.execute("""
+               SELECT user_id, extra_description, extra_amount, extra_type
+               FROM `add`
+               WHERE start_date >= %s AND end_date <= %s
+           """, (start_str, end_str))
+        extra_rows = cursor.fetchall()
+        extra_rows = convert_rows_list(extra_rows)
     conn.close()
-    return JSONResponse(content={"status": "success", "data": results})
+
+    if not week_rows and not extra_rows:
+        return JSONResponse(content={"status": "success"})
+    start_m = start[:6]  # 시작 날짜 문자열의 앞 6자리 (예: '202506')
+    end_m = end[:6]  # 끝 날짜 문자열의 앞 6자리
+    if start_m != end_m and week_rows[0]['file_count'] != 2:
+        return JSONResponse(content={"status": "fail"})
+
+
+    # 1) extra 항목을 user_id 기준으로 묶기
+    extra_map = {}
+    for row in extra_rows:
+        uid = row["user_id"]
+        entry = {
+            "extra_description": row["extra_description"],
+            "extra_amount": row["extra_amount"],
+            "extra_type": row["extra_type"]
+        }
+        extra_map.setdefault(uid, []).append(entry)
+
+    # 2) user_id를 기준으로 week_rows와 extra_map 병합
+    results_map = {}
+
+    # week_rows에 있는 데이터 먼저 넣기
+    for row in week_rows:
+        uid = row["user_id"]
+        # 기본 row 복사 및 extra_list 추가
+        row_copy = dict(row)  # 복사본 생성 (원본 건들지 않기 위해)
+        row_copy["extra_list"] = extra_map.get(uid, [])
+        results_map[uid] = row_copy
+    conn = get_conn()
+    # extra_rows에만 있는 user_id 처리 (week_rows에 없는 경우)
+    for uid, extra_list in extra_map.items():
+        if uid not in results_map:
+
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                              SELECT name FROM test2.member where user_id = %s
+                          """, uid)
+                uname = cursor.fetchone()
+
+            results_map[uid] = {
+                "user_id": uid,
+                "name": uname['name'],  # 이름 정보가 없다면 빈 문자열, 필요하면 다른 방법으로 넣기
+                "count": 0,
+                "totalA": 0,
+                "totalB": 0,
+                "totalD": 0,
+                "file_count": 0,
+                "extra_list": extra_list
+            }
+    conn.close()
+    results = list(results_map.values())
+
+    if week_rows:
+        start_m = start[:6]
+        end_m = end[:6]
+        if start_m != end_m and week_rows[0]['file_count'] != 2:
+            return JSONResponse(content={"status": "fail"})
+
+        return JSONResponse(content={
+            "status": "success",
+            "file_count": week_rows[0]['file_count'],
+            "data": results
+        })
+    else:
+        # week_rows가 없더라도 extra 있는 라이더는 포함됨
+        return JSONResponse(content={
+            "status": "success",
+            "file_count": 0,
+            "data": results
+        })
 
 
 def convert_row(row):
     return {k: (int(v) if isinstance(v, Decimal) and v % 1 == 0 else float(v) if isinstance(v, Decimal) else v)
             for k, v in row.items()}
+
+
+def convert_rows_list(rows):
+    return [
+        {k: (int(v) if isinstance(v, Decimal) and v % 1 == 0
+             else float(v) if isinstance(v, Decimal)
+             else v)
+         for k, v in row.items()}
+        for row in rows
+    ]

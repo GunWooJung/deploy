@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>주 정산 기타</title>
+  <style>
+    /* 기존 스타일 유지 */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      background: #fff;
+      padding: 20px 30px 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-sizing: border-box;
+      text-align: center;
+    }
+    nav {
+      background-color: #3498db;
+      padding: 12px 20px;
+      display: flex;
+      gap: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0 0 40px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      flex-grow: 1;
+      text-align: center;
+    }
+    nav a.active {
+      background-color: #2980b9;
+    }
+    nav a:hover {
+      background-color: #2980b9;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      padding: 30px;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+   input[type="number"],
+    input[type="text"],
+    select {
+      padding: 6px 10px; /* 패딩 조정 */
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      line-height: 1.5; /* 텍스트 정렬 개선 */
+    }
+    input[type="number"] {
+      text-align: right;
+      width: 100px; /* 숫자 입력 필드 너비 통일 */
+    }
+    input[type="text"]#extraDescription { /* 기타 항목 내용 입력 필드 너비 */
+      width: 300px;
+    }
+    input[type="text"]#weekPicker { /* 주 선택기 너비 */
+      width: 200px;
+    }
+    select#riderSelect,
+    select#type { /* select 박스 너비 */
+      width: 150px; /* 라이더 선택 너비 통일 */
+    }
+    select#type {
+        width: 100px; /* 지급/차감 선택 너비 */
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px; /* 요소 간 간격 */
+      flex-wrap: wrap; /* 작은 화면에서 줄바꿈 허용 */
+    }
+    .form-group label {
+      font-weight: bold;
+      min-width: 80px; /* 라벨 너비 고정하여 정렬 */
+      text-align: right;
+    }
+
+    /* --- 버튼 스타일 --- */
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .btn-small { /* 현재 코드에 사용되지 않음 */
+      min-width: 70px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+
+    /* --- 제목 스타일 --- */
+    h3 {
+      margin-top: 40px; /* 조회 결과 섹션과의 간격 */
+      margin-bottom: 20px;
+      color: #34495e;
+      text-align: center;
+    }
+
+    /* --- 조회 결과 테이블 스타일 --- */
+    .result-box {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      background-color: #fcfcfc;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+      overflow-x: auto; /* 테이블이 너무 넓을 때 가로 스크롤바 생성 */
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 600px; /* 모바일에서 테이블이 너무 좁아지지 않도록 최소 너비 설정 */
+      margin-top: 0; /* result-box 내부에서 마진 제거 */
+      border-radius: 8px; /* result-box에 적용되므로 테이블에는 필요 없음 */
+      overflow: hidden; /* result-box에 적용되므로 테이블에는 필요 없음 */
+      box-shadow: none; /* result-box에 적용되므로 테이블에는 필요 없음 */
+      background-color: #fff; /* result-box에 적용되므로 테이블에는 필요 없음 */
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px 14px;
+      text-align: center;
+      white-space: nowrap; /* 줄바꿈 방지 */
+    }
+    th {
+      background-color: #ecf0f1;
+      font-weight: bold;
+      position: sticky; /* 헤더 고정 (스크롤 시) */
+      top: 0;
+      z-index: 1; /* 다른 내용 위로 */
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    #extraItemsMessage {
+        margin-top: 10px; /* 메시지와 테이블 사이 간격 */
+        font-weight: bold;
+        color: #777; /* 메시지 색상 */
+    }
+
+
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/admin-member">회원관리</a>
+      <a href="/admin-manage" >일정산</a>
+      <a href="/admin-week" >주 정산</a>
+      <a href="/admin-add" class="active">주 정산 기타 등록</a>
+      <a href="/admin-week-plus">주 정산 소급 적용</a>
+    </nav>
+ <!-- 전체를 감싸는 컨테이너를 사용 -->
+
+    <div>
+      날짜 선택 (해당 날짜가 포함된 "수요일~화요일 주" 가 선택됩니다.)<br><br>
+      <input id="weekPicker" placeholder="주 선택" readonly style="width: 200px;" /><br><br>
+      선택된 날짜 : <div id="weekRangeDisplay" style="margin-top: 8px; font-weight: bold;">없음</div>
+      <br><br>
+    </div>
+
+      <div class="form-group">
+        <label for="riderSelect">라이더명:</label>
+        <select id="riderSelect" style="width: 150px;">
+          <option value="">전체 라이더</option> {% for member in members %}
+          <option value="{{ member.user_id }}">{{ member.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    <br><br><br>
+    <div class="form-group">
+      <label for="extraDescription">기타 항목 내용 :</label>
+      <input type="text" id="extraDescription" name="extraDescription" placeholder="내용 입력" style="width: 300px; padding: 6px; margin-left: 10px; border-radius: 4px; border: 1px solid #ccc;" />
+    </div>
+
+    <br>
+
+    <div class="form-group">
+            <label for="type" style="margin-left: 30px;">지급/차감 :</label>
+      <select id="type" name="type" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; margin-right: 30px;">
+        <option value="plus">지급 +</option>
+        <option value="minus">차감 -</option>
+      </select>
+      <label for="amount">금액 :</label>
+      <input type="number" id="amount" name="amount" placeholder="0" style="width: 100px; padding: 6px; margin-left: 10px; border-radius: 4px; border: 1px solid #ccc;" />
+    </div>
+    <br><br>
+     <button id="submitButton">등록</button> <br><br>
+        <hr>
+    <h3>기타 항목 조회 결과</h3>
+    <div id="extraItemsMessage" style="text-align: center; padding: 10px; color: #555;">
+        날짜와 라이더를 선택해주세요.
+    </div>
+    <div class="result-box">
+        <table style="width:100%;">
+            <thead>
+                <tr>
+                    <th>라이더명</th>
+                    <th>주차 시작일</th>
+                    <th>주차 종료일</th>
+                    <th>항목 내용</th>
+                    <th>지급/차감</th>
+                    <th>금액</th>
+                    <th>삭제</th>
+                </tr>
+            </thead>
+            <tbody id="extraItemsTableBody">
+                </tbody>
+        </table>
+    </div>
+    <br><br>
+  <script>
+  const password = "3458";
+  const PASSWORD_KEY = "admin_password";
+
+  // localStorage에 저장된 비밀번호 확인
+  const savedPassword = localStorage.getItem(PASSWORD_KEY);
+
+  if (savedPassword !== password) {
+    const input = prompt("현관문(안쪽) 비밀번호를 입력하세요:");
+
+    if (input !== password) {
+      alert("비밀번호가 틀렸습니다. 페이지를 닫습니다.");
+      window.close();  // 브라우저가 허용하지 않으면 아래로 대체
+      document.body.innerHTML = "<h2>접근이 차단되었습니다.</h2>";
+    } else {
+      // 올바른 비밀번호면 localStorage에 저장
+      localStorage.setItem(PASSWORD_KEY, password);
+    }
+  }
+
+// 전역 변수 선언
+let startDateGlobal = null;
+let endDateGlobal = null;
+
+// 요일 이름
+const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
+// 날짜 포맷 (표시용)
+function format(date) {
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${mm}.${dd} (${weekdays[date.getDay()]})`;
+}
+
+// 날짜 포맷 (YYYYMMDD 서버용)
+function toYMD(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}${mm}${dd}`;
+}
+
+const weekPicker = flatpickr("#weekPicker", {
+  dateFormat: "Y-m-d",
+  onChange: handleWeekChange
+});
+
+// 공통 핸들러 함수로 분리
+async function handleWeekChange(selectedDates) {
+const start = new Date(selectedDates[0]);
+start.setDate(start.getDate() + 1); // 하루 전으로 이동
+
+  console.log("d"+start);
+  const day = start.getDay();
+
+  // 기준일: 수요일
+  const adjust = (3 - day + 7) % 7;
+  start.setDate(start.getDate() + adjust);
+// 시작일을 1주일 전으로 이동
+start.setDate(start.getDate() - 7);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6); // 다음 주 화요일
+
+  startDateGlobal = toYMD(start);
+  endDateGlobal = toYMD(end);
+
+  document.getElementById("weekRangeDisplay").textContent = `${format(start)} ~ ${format(end)}`;
+
+  fetchExtraItems();
+}
+
+
+// 제출 버튼 클릭 시 데이터 전송
+document.getElementById('submitButton').addEventListener('click', async function() {
+    const riderSelect = document.getElementById('riderSelect');
+    const selectedRiderId = riderSelect.value;
+    const selectedRiderName = riderSelect.options[riderSelect.selectedIndex].textContent; // 라이더명 가져오기
+
+    const extraDescription = document.getElementById('extraDescription').value.trim();
+    const type = document.getElementById('type').value;
+    const amount = document.getElementById('amount').value;
+
+    // 유효성 검사
+    if (!startDateGlobal || !endDateGlobal) {
+        alert("날짜를 먼저 선택해주세요.");
+        return;
+    }
+    if (!selectedRiderId) { // '라이더 선택'이 선택된 경우 (value가 비어있음)
+        alert("라이더를 선택해주세요.");
+        return;
+    }
+    if (extraDescription === "") {
+        alert("기타 항목 내용을 입력해주세요.");
+        return;
+    }
+    if (amount === "" || isNaN(amount) || parseFloat(amount) <= 0) {
+        alert("유효한 금액을 입력해주세요.");
+        return;
+    }
+
+    const payload = {
+        start_date: startDateGlobal,
+        end_date: endDateGlobal,
+        rider_id: selectedRiderId, // ID는 정수로 변환
+        rider_name: selectedRiderName, // 라이더 이름도 필요하다면
+        description: extraDescription,
+        amount: parseFloat(amount), // 금액은 숫자로 변환
+        type: type // "plus" 또는 "minus"
+    };
+
+    console.log("전송할 데이터:", payload);
+
+    try {
+        const response = await fetch('/admin-add-data', { // 데이터를 전송할 서버 엔드포인트
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert("데이터가 성공적으로 등록되었습니다: " + result.message);
+            // 성공 후 입력 필드 초기화 (선택 사항)
+            document.getElementById('extraDescription').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('riderSelect').value = ''; // 라이더 선택 초기화
+            // 날짜는 그대로 유지하거나 초기화할 수 있습니다.
+           fetchExtraItems();
+        } else {
+            alert("데이터 등록 실패: " + result.detail || result.message || response.statusText);
+        }
+    } catch (error) {
+        console.error('데이터 전송 중 오류 발생:', error);
+        alert("서버 통신 오류가 발생했습니다.");
+    }
+});
+
+
+// 라이더별 추가 항목을 조회하고 테이블에 표시하는 함수
+async function fetchExtraItems() {
+    const extraItemsTableBody = document.getElementById('extraItemsTableBody');
+    const extraItemsMessage = document.getElementById('extraItemsMessage');
+
+    extraItemsTableBody.innerHTML = ''; // 기존 내용 지우기
+    extraItemsMessage.textContent = ''; // 메시지 초기화
+
+    if (!startDateGlobal || !endDateGlobal) {
+        extraItemsMessage.textContent = '날짜를 선택해주세요.';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/get-extra-items?start_date=${startDateGlobal}&end_date=${endDateGlobal}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+            data.forEach(item => {
+                const row = extraItemsTableBody.insertRow();
+                // SQL 쿼리에서 'name'으로 라이더 이름을 가져오므로, item.name 사용
+                const riderName = item.name || '';
+                const startDateFormatted = item.start_date ? new Date(item.start_date).toLocaleDateString('ko-KR') : '';
+                const endDateFormatted = item.end_date ? new Date(item.end_date).toLocaleDateString('ko-KR') : '';
+                const amountFormatted = item.extra_amount ? parseFloat(item.extra_amount).toLocaleString() : '0'; // 금액 포맷
+                const typeText = item.extra_type === 'plus' ? '지급(+)' : (item.extra_type === 'minus' ? '차감(-)' : '');
+
+                row.insertCell().textContent = riderName;
+                row.insertCell().textContent = startDateFormatted;
+                row.insertCell().textContent = endDateFormatted;
+                row.insertCell().textContent = item.extra_description || '';
+                row.insertCell().textContent = typeText;
+                row.insertCell().textContent = amountFormatted;
+
+
+                 // 삭제 버튼 추가
+                const deleteCell = row.insertCell();
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '삭제';
+                deleteButton.classList.add('delete-btn'); // 삭제 버튼 클래스 추
+                deleteButton.onclick = () => deleteExtraItem(
+                    item.id,       // 라이더 이름 (삭제 후 재조회에 필요)
+                );
+                deleteCell.appendChild(deleteButton);
+            });
+
+        } else {
+            extraItemsMessage.textContent = '선택된 날짜 및 라이더에 대한 기타 항목이 없습니다.';
+        }
+    } catch (error) {
+        console.error('기타 항목 조회 중 오류 발생:', error);
+        extraItemsMessage.textContent = '기타 항목을 불러오는데 실패했습니다.';
+    }
+}
+
+
+
+// 기타 항목 삭제 함수 (새로 추가)
+async function deleteExtraItem(id) {
+    if (!confirm(`기타 항목을 정말로 삭제하시겠습니까?`)) {
+        return; // 사용자가 취소를 누르면 함수 종료
+    }
+
+    try {
+        const response = await fetch('/admin-delete-extra-item?eid='+id, { // 삭제를 처리할 새로운 엔드포인트
+            method: 'DELETE', // DELETE 메소드 사용
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert("기타 항목이 성공적으로 삭제되었습니다: ");
+            fetchExtraItems(); // 삭제 후 목록 새로고침
+        } else {
+            alert("기타 항목 삭제 실패: ");
+        }
+    } catch (error) {
+        console.error('기타 항목 삭제 중 오류 발생:', error);
+        alert("서버 통신 오류가 발생했습니다.");
+    }
+}
+
+  </script>
+</body>
+</html>
