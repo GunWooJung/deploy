@@ -520,9 +520,10 @@ async def form_week(file1: UploadFile = File(...)):
 
             if pd.isna(name_fee) or pd.isna(amount_fee):
                 continue
+            """
             if isinstance(reason, str) and reason.startswith("기피"):
                 continue
-
+            """
             amount_fee_parsed = parse_amount(amount_fee)
             name_key = str(name_fee).strip()
             fee_dict[name_key] = fee_dict.get(name_key, 0) + amount_fee_parsed
