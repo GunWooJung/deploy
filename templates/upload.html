@@ -296,7 +296,7 @@
             const afterTax = Math.floor(배달처리비 *  0.049);
             const afterInsurance = afterTax - 보험료;
             const motoFeeTotal = moto_fee * currentDays;
-            const afterMoto = afterInsurance - motoFeeTotal;
+            const afterMoto = 배달처리비 - afterTax - motoFeeTotal;
 
             finalSum += afterMoto;
 
