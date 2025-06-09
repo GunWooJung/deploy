@@ -7,7 +7,7 @@
     /* 기존 스타일 유지 */
     .container {
       width: 100%;
-      max-width: 1200px;
+      max-width: 800px;
       background: #fff;
       padding: 20px 30px 40px 30px;
       border-radius: 12px;
@@ -151,7 +151,7 @@
   padding: 15px 20px;
   border-radius: 8px;
   background-color: #f9f9f9;
-  min-width: 800px;
+  min-width: 500px;
 }
 
 .card h3 {
@@ -247,6 +247,7 @@
     </div>
 
     <h3>집계 결과</h3>
+    <div id = "totalAll"></div>
     <div id="resultCombined" class="result-box">
       <!-- 일정산 + 보험료 결과 영역 -->
     </div>
@@ -345,8 +346,8 @@ const weekPicker = flatpickr("#weekPicker", {
 
 // 공통 핸들러 함수로 분리
 async function handleWeekChange(selectedDates) {
-const start = new Date(selectedDates[0]);
-start.setDate(start.getDate() + 1); // 하루 전으로 이동
+  const start = new Date(selectedDates[0]);
+  start.setDate(start.getDate() + 1); // 하루 전으로 이동
 
   console.log("d"+start);
   const day = start.getDay();
@@ -355,7 +356,7 @@ start.setDate(start.getDate() + 1); // 하루 전으로 이동
   const adjust = (3 - day + 7) % 7;
   start.setDate(start.getDate() + adjust);
 // 시작일을 1주일 전으로 이동
-start.setDate(start.getDate() - 7);
+  start.setDate(start.getDate() - 7);
   const end = new Date(start);
   end.setDate(start.getDate() + 6); // 다음 주 화요일
 
@@ -383,13 +384,20 @@ start.setDate(start.getDate() - 7);
 
 // ✅ 렌더링 함수
 function renderWeekTable(data) {
+
+
   const resultBox = document.getElementById("resultCombined");
   if (!Array.isArray(data) || data.length === 0) {
     resultBox.innerHTML = "<div>해당 주간 데이터가 없습니다.</div>";
+    let totalAll = 0;
+    const totalSumDiv = document.getElementById("totalAll");
+    totalSumDiv.innerHTML = `<h3>전체 모든 인원 합계 = ${totalAll.toLocaleString()} 원</h3>`;
     return;
   }
 
   resultBox.innerHTML = ""; // 초기화
+
+  let totalAll = 0;
 
   for (const row of data) {
     const addByCount = (count) => {
@@ -407,19 +415,10 @@ function renderWeekTable(data) {
     const addC = addByCount(row.count);
     const government = Math.floor(0.049 * (row.totalA + row.totalB + addC));
 
-    const extraName = row.extra_list.map(item => item.extra_description).join(', ');
 
-    const extraSum = row.extra_list.reduce((sum, item) => {
-    const amount = Number(item.extra_amount);
-      return item.extra_type === 'plus'
-        ? sum + amount
-        : sum - amount;
-    }, 0);
+    let total = row.totalA + row.totalB + addC - government - row.totalD;
 
-
-    const total = row.totalA + row.totalB + addC - government - row.totalD + extraSum;
-
-    const cardHTML = `
+    let cardHTML = `
       <div class="card">
         <h3>${row.name}</h3>
         <div class="item"><span class="label">라이더명:</span> <span class="value">${row.name}</span></div>
@@ -429,13 +428,36 @@ function renderWeekTable(data) {
         <div class="item"><span class="label">C 추가 지급(건수 프로모션):</span> <span class="value">${addC.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">D 4.9% 세금 = 0.049*(A+B+C) :</span> <span class="value">${government.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">E 시간제 보험료:</span> <span class="value">${row.totalD.toLocaleString()} 원</span></div>
-        <div class="item"><span class="label">기타(${extraName}):</span> <span class="value">${extraSum.toLocaleString()} 원</span></div>
-        <div class="item total"><span class="label">총 합계(A+B+C-D-E ± 기타):</span> <span class="value">${total.toLocaleString()} 원</span></div>
-      </div>
     `;
 
+
+    row.extra_list.map(item => {
+        if(item.extra_type == 'plus'){
+          item.extra_amount = Math.floor(item.extra_amount * ( 1-0.049));
+          total += item.extra_amount;
+          cardHTML += `<div class="item">
+          <span class="label">기타(${item.extra_description}):</span> <span class="value">(4.9% 공제 후)  ${item.extra_amount.toLocaleString()} 원</span>
+          </div>`;
+        }
+        else{
+          item.extra_amount = item.extra_amount * (-1);
+          total += item.extra_amount;
+          cardHTML += `<div class="item">
+          <span class="label">기타(${item.extra_description}):</span> <span class="value">${item.extra_amount.toLocaleString()} 원</span>
+          </div>`;
+        }
+    });
+
+    cardHTML += `<div class="item total"><span class="label">총 합계(A+B+C-D-E ± 기타):</span>
+    <span class="value">${total.toLocaleString()} 원</span></div>
+    </div>`;
+    totalAll += total;
     resultBox.innerHTML += cardHTML;
   }
+
+    const totalSumDiv = document.getElementById("totalAll");
+    totalSumDiv.innerHTML = `<h3>전체 모든 인원 합계 = ${totalAll.toLocaleString()} 원</h3>`;
+
 }
   </script>
 </body>

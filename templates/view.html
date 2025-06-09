@@ -95,7 +95,7 @@
   <script>
     async function fetchRiderSummary() {
       const riderId = document.getElementById("riderIdInput").value.trim();
-      const resultBox = document.getElementById("riderSummaryResult");
+      let resultBox = document.getElementById("riderSummaryResult");
       if (startDateGlobal == null || endDateGlobal == null) {
         alert('주(주중 아무 날짜)를 선택하세요.');
         return;
@@ -133,23 +133,11 @@
         const addByCountResult = addByCount(row.count);
         const government = Math.floor(0.049 * (row.totalA + row.totalB + addByCountResult));
 
-
-        const extraName = row.extra_list.map(item => item.extra_description).join(', ');
-
-        const extraSum = row.extra_list.reduce((sum, item) => {
-        const amount = Number(item.extra_amount);
-          return item.extra_type === 'plus'
-            ? sum + amount
-            : sum - amount;
-        }, 0);
-
-
-        const totalSum = row.totalA + row.totalB + addByCountResult - government - row.totalD + extraSum;
+        let totalSum = row.totalA + row.totalB + addByCountResult - government - row.totalD;
 
         // 콤마 찍는 함수 (숫자형일 때만)
         const fmt = num => (typeof num === 'number' ? num.toLocaleString() : num);
-
-        resultBox.innerHTML = `
+        let tableHTML = `
           <table>
             <thead>
               <tr><th>항목</th><th>값</th></tr>
@@ -161,15 +149,34 @@
               <tr><td>B 추가 지급(과적,조리대기,기피지역) </td><td>${fmt(row.totalB)} 원</td></tr>
               <tr><td>C 추가 지급 (건수 프로모션)</td><td>${fmt(addByCountResult)} 원</td></tr>
               <tr><td>D 4.9% 세금(고용,산재,소득세,주민세)<br>= 0.049*(A+B+C)</td><td>${fmt(government)} 원</td></tr>
-              <tr><td>E 시간제 보험료</td><td>${fmt(row.totalD)} 원</td></tr>
-              <tr><td>기타(${extraName}):</td><td>${fmt(extraSum)} 원</td></tr>
+              <tr><td>E 시간제 보험료</td><td>${fmt(row.totalD)} 원</td></tr>`;
+
+
+    row.extra_list.map(item => {
+        if(item.extra_type == 'plus'){
+          item.extra_amount = Math.floor(item.extra_amount * ( 1-0.049));
+          totalSum += item.extra_amount;
+          tableHTML += `<tr><td>기타(${item.extra_description}):</td><td>(4.9% 공제 후)  ${fmt(item.extra_amount)} 원</td></tr>`;
+        }
+        else{
+          item.extra_amount = item.extra_amount * (-1);
+          totalSum += item.extra_amount;
+          tableHTML += `<tr><td>기타(${item.extra_description}):</td><td>${item.extra_amount.toLocaleString()} 원</td></tr>`;
+        }
+    });
+
+
+
+
+     tableHTML +=  `
               <tr style="font-weight:bold; background:#eaf4fc;">
                 <td>총 합계 (A+B+C-D-E ± 기타)</td>
                 <td>${fmt(totalSum)} 원</td>
               </tr>
             </tbody>
-          </table>
-        `;
+          </table>`;
+
+resultBox.innerHTML = tableHTML; // 최종적으로 한 번에 할당
 
       } catch (err) {
         alert('오류 : 데이터가 존재하지 않습니다. 날짜와 ID를 확인해주세요.');

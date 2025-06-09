@@ -157,6 +157,7 @@
           <th>아이디</th>
           <th>오토바이 일 이용료</th>
           <th>저장</th>
+          <th>삭제</th>
         </tr>
       </thead>
       <tbody>
@@ -171,6 +172,11 @@
             <td>
               <button class="btn-small" data-member-id="{{ member.id }}" data-member-name="{{ member.name }}">
                 저장
+              </button>
+            </td>
+              <td>
+              <button class="btn-small" onclick="deleteMember({{ member.id }} , '{{member.name}}')">
+                삭제
               </button>
             </td>
           </tr>
@@ -294,6 +300,35 @@ memberTableBody.addEventListener('click', async (e) => {
     alert(`요청 실패: ${error.message}`);
   }
 });
+
+
+
+const deleteMember = async  (id, name) => {
+
+
+   const confirmed = confirm(`${name} 님을 삭제하시겠습니까?`);
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(`/member/delete/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      alert(`삭제 실패: ${errorText}`);
+      return;
+    }
+
+    alert("삭제되었습니다.");
+    location.reload();
+  } catch (error) {
+    alert(`요청 실패: ${error.message}`);
+  }
+};
+
+
 
 
   </script>

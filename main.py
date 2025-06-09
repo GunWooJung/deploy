@@ -301,6 +301,16 @@ def add_member(name: str = Query(..., min_length=1),
     return {"result": "ok"}
 
 
+@app.delete("/member/delete/{mid}")
+def del_member(mid: int):
+    conn = get_conn()
+    with conn.cursor() as cursor:
+        cursor.execute("DELETE FROM member WHERE id = %s", mid)
+        conn.commit()
+    conn.close()
+    return {"result": "ok"}
+
+
 class MemberEdit(BaseModel):
     name: str
     moto_fee: int
