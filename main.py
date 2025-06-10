@@ -43,13 +43,14 @@ def admin_member(request: Request):
     conn = get_conn()
     members = []
     with conn.cursor() as cursor:
-        cursor.execute("SELECT id, name, user_id FROM test2.member")
+        cursor.execute("SELECT id, name, user_id, moto_fee FROM test2.member")
         results = cursor.fetchall()
         for row in results:
             members.append({
                 "id": row["id"],
                 "name": row["name"],
-                "user_id": row["user_id"]
+                "user_id": row["user_id"],
+                "moto_fee": row["moto_fee"]
             })
     conn.close()
     return templates.TemplateResponse("add.html", {
@@ -223,16 +224,27 @@ async def rget_week_summary(
                               SELECT name FROM test2.member where user_id = %s
                           """, uid)
                 uname = cursor.fetchone()
-
-            results_map[uid] = {
-                "user_id": uid,
-                "name": uname['name'],  # 이름 정보가 없다면 빈 문자열, 필요하면 다른 방법으로 넣기
-                "count": 0,
-                "totalA": 0,
-                "totalB": 0,
-                "totalD": 0,
-                "file_count": 0,
-                "extra_list": extra_list
+            if uname:
+                results_map[uid] = {
+                    "user_id": uid,
+                    "name": uname['name'],  # 이름 정보가 없다면 빈 문자열, 필요하면 다른 방법으로 넣기
+                    "count": 0,
+                    "totalA": 0,
+                    "totalB": 0,
+                    "totalD": 0,
+                    "file_count": 0,
+                    "extra_list": extra_list
+                }
+            else:
+                results_map[uid] = {
+                    "user_id": uid,
+                    "name": uname['name'],  # 이름 정보가 없다면 빈 문자열, 필요하면 다른 방법으로 넣기
+                    "count": 0,
+                    "totalA": 0,
+                    "totalB": 0,
+                    "totalD": 0,
+                    "file_count": 0,
+                    "extra_list": extra_list
             }
     conn.close()
     results = list(results_map.values())

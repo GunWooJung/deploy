@@ -430,7 +430,6 @@ function renderWeekTable(data) {
         <div class="item"><span class="label">E 시간제 보험료:</span> <span class="value">${row.totalD.toLocaleString()} 원</span></div>
     `;
 
-
     row.extra_list.map(item => {
         if(item.extra_type == 'plus'){
           item.extra_amount = Math.floor(item.extra_amount * ( 1-0.049));
@@ -452,6 +451,7 @@ function renderWeekTable(data) {
     <span class="value">${total.toLocaleString()} 원</span></div>
     </div>`;
     totalAll += total;
+
     resultBox.innerHTML += cardHTML;
   }
 
