@@ -398,6 +398,7 @@ function renderWeekTable(data) {
   resultBox.innerHTML = ""; // 초기화
 
   let totalAll = 0;
+  let totalBeforeAll = 0;
 
   for (const row of data) {
     const addByCount = (count) => {
@@ -417,7 +418,7 @@ function renderWeekTable(data) {
 
 
     let total = row.totalA + row.totalB + addC - government - row.totalD;
-
+    let beforeTotal = row.totalA + row.totalB+ + addC
     let cardHTML = `
       <div class="card">
         <h3>${row.name}</h3>
@@ -432,6 +433,7 @@ function renderWeekTable(data) {
 
     row.extra_list.map(item => {
         if(item.extra_type == 'plus'){
+          beforeTotal += item.extra_amount;
           item.extra_amount = Math.floor(item.extra_amount * ( 1-0.049));
           total += item.extra_amount;
           cardHTML += `<div class="item">
@@ -449,14 +451,19 @@ function renderWeekTable(data) {
 
     cardHTML += `<div class="item total"><span class="label">총 합계(A+B+C-D-E ± 기타):</span>
     <span class="value">${total.toLocaleString()} 원</span></div>
+    <div class="item total"><span class="label">세전만 합계(A+B+C+기타(세전)):</span>
+    <span class="value">${beforeTotal.toLocaleString()} 원</span></div>
+
+
     </div>`;
     totalAll += total;
-
+    totalBeforeAll += beforeTotal;
     resultBox.innerHTML += cardHTML;
   }
 
     const totalSumDiv = document.getElementById("totalAll");
-    totalSumDiv.innerHTML = `<h3>전체 모든 인원 합계 = ${totalAll.toLocaleString()} 원</h3>`;
+    totalSumDiv.innerHTML = `<h3>전체 모든 인원 합계 = ${totalAll.toLocaleString()} 원</h3>
+    <br><h3>세전만 전체 합계 = ${totalBeforeAll.toLocaleString()} 원</h3>`;
 
 }
   </script>

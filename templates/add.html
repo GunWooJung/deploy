@@ -211,7 +211,7 @@
         <option value="plus">지급 +</option>
         <option value="minus">차감 -</option>
       </select>
-      <label for="amount">금액 :</label>
+      <label for="amount">금액 : (세전)</label>
       <input type="number" id="amount" name="amount" placeholder="0" style="width: 100px; padding: 6px; margin-left: 10px; border-radius: 4px; border: 1px solid #ccc;" />
     </div>
     <br>
@@ -240,7 +240,8 @@
                     <th>주차 종료일</th>
                     <th>항목 내용</th>
                     <th>지급/차감</th>
-                    <th>금액</th>
+                    <th>(세전)금액</th>
+                    <th>(4.9%차감)금액</th>
                     <th>삭제</th>
                 </tr>
             </thead>
@@ -469,6 +470,8 @@ async function fetchExtraItems() {
                 const startDateFormatted = item.start_date ? new Date(item.start_date).toLocaleDateString('ko-KR') : '';
                 const endDateFormatted = item.end_date ? new Date(item.end_date).toLocaleDateString('ko-KR') : '';
                 const amountFormatted = item.extra_amount ? parseFloat(item.extra_amount).toLocaleString() : '0'; // 금액 포맷
+                 const amountFormatted2 = item.extra_amount ? parseInt(item.extra_amount * (1 - 0.049)).toLocaleString() : '0'; // 금액 포맷
+
                 const typeText = item.extra_type === 'plus' ? '지급(+)' : (item.extra_type === 'minus' ? '차감(-)' : '');
 
                 row.insertCell().textContent = riderName;
@@ -476,8 +479,8 @@ async function fetchExtraItems() {
                 row.insertCell().textContent = endDateFormatted;
                 row.insertCell().textContent = item.extra_description || '';
                 row.insertCell().textContent = typeText;
-                row.insertCell().textContent = amountFormatted;
-
+                row.insertCell().textContent = amountFormatted.toLocaleString()+' 원';
+                row.insertCell().textContent = amountFormatted2.toLocaleString()+' 원';
 
                  // 삭제 버튼 추가
                 const deleteCell = row.insertCell();
