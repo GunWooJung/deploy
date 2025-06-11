@@ -480,7 +480,7 @@ async function fetchExtraItems() {
                 row.insertCell().textContent = item.extra_description || '';
                 row.insertCell().textContent = typeText;
                 row.insertCell().textContent = amountFormatted.toLocaleString()+' 원';
-                row.insertCell().textContent = amountFormatted2.toLocaleString()+' 원';
+                row.insertCell().textContent = item.extra_type == 'plus' ? amountFormatted2.toLocaleString()+' 원' : 'X';
 
                  // 삭제 버튼 추가
                 const deleteCell = row.insertCell();

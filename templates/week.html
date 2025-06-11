@@ -449,12 +449,10 @@ function renderWeekTable(data) {
         }
     });
 
-    cardHTML += `<div class="item total"><span class="label">총 합계(A+B+C-D-E ± 기타):</span>
-    <span class="value">${total.toLocaleString()} 원</span></div>
-    <div class="item total"><span class="label">세전만 합계(A+B+C+기타(세전)):</span>
+    cardHTML += `    <div class="item total"><span class="label">세전 합계 / A+B+C+기타(지급+만):</span>
     <span class="value">${beforeTotal.toLocaleString()} 원</span></div>
-
-
+    <div class="item total"><span class="label">총 합계(A+B+C-D-E ± 기타):</span>
+    <span class="value">${total.toLocaleString()} 원</span></div>
     </div>`;
     totalAll += total;
     totalBeforeAll += beforeTotal;
@@ -462,9 +460,8 @@ function renderWeekTable(data) {
   }
 
     const totalSumDiv = document.getElementById("totalAll");
-    totalSumDiv.innerHTML = `<h3>전체 모든 인원 합계 = ${totalAll.toLocaleString()} 원</h3>
-    <br><h3>세전만 전체 합계 = ${totalBeforeAll.toLocaleString()} 원</h3>`;
-
+    totalSumDiv.innerHTML = `<h3>세전 전체 합계 = ${totalBeforeAll.toLocaleString()} 원</h3><br>
+    <h3>전체 모든 인원 합계 = ${totalAll.toLocaleString()} 원</h3>`;
 }
   </script>
 </body>
