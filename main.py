@@ -748,17 +748,23 @@ async def inc_member(
         results = cursor.fetchall()
         include = 0
         for row in results:
-            if row["included"] == 1:
-                new_status = 0
+            if isinstance(row, dict):
+                if row.get("included") == 1:
+                    include = 0
+                else:
+                    include = 1
             else:
-                new_status = 1
-
+                # 튜플일 경우 첫 번째 컬럼 값이 포함 여부
+                if row[0] == 1:
+                    include = 0
+                else:
+                    include = 1
 
         # 상태 반전 적용
-        cursor.execute("UPDATE member SET included = %s WHERE id = %s", (new_status, mid))
+        cursor.execute("UPDATE member SET included = %s WHERE id = %s", (include, mid))
         conn.commit()
 
     conn.close()
-    return {"result": "ok", "included": new_status}
+    return {"result": "ok", "included": include}
 
 
