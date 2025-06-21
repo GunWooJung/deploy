@@ -282,14 +282,15 @@ def admin_manage(request: Request):
     conn = get_conn()
     members = []
     with conn.cursor() as cursor:
-        cursor.execute("SELECT id, name, moto_fee, user_id FROM test2.member")
+        cursor.execute("SELECT id, name, moto_fee, user_id, included FROM test2.member")
         results = cursor.fetchall()
         for row in results:
             members.append({
                 "id": row["id"],
                 "name": row["name"],
                 "moto_fee": row["moto_fee"],
-                "user_id": row["user_id"]
+                "user_id": row["user_id"],
+                "included": row["included"]
             })
     conn.close()
 
@@ -368,6 +369,19 @@ async def upload_excel(
         return JSONResponse(status_code=400, content={"status": "error", "message": "file1 또는 file2 중 하나는 반드시 필요합니다."})
 
     try:
+        include_member = []
+        conn = get_conn()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * included FROM test2.member")
+            results = cursor.fetchall()
+            for row in results:
+                include_member.append({
+                    "id": row["id"],
+                    "name": row["name"],
+                    "included": row["included"]
+                })
+        conn.close()
+
         result = {}
 
         # file1 처리 (배달처리비)
@@ -387,6 +401,8 @@ async def upload_excel(
             grouped = df.groupby(['라이더명', '운행일'])['배달처리비'].sum().reset_index()
 
             for _, row in grouped.iterrows():
+                if row['라이더명'] in include_member:
+                    continue
                 rider = row['라이더명']
                 if rider not in result:
                     result[rider] = {
@@ -416,6 +432,8 @@ async def upload_excel(
             insurance_data = df2.groupby(['이름', '운행일'])['보험료 발생금액(원)'].sum().reset_index()
 
             for _, row in insurance_data.iterrows():
+                if row['이름'] in include_member:
+                    continue
                 rider = row['이름']
                 운행일 = row['운행일']
                 보험료 = int(row['보험료 발생금액(원)'])
@@ -717,3 +735,32 @@ def convert_rows_list(rows):
          for k, v in row.items()}
         for row in rows
     ]
+
+
+@app.get("/member/include-toggle/{mid}")
+async def inc_member(
+        mid: str
+):
+    conn = get_conn()
+    with conn.cursor() as cursor:
+        # 현재 포함 상태 가져오기
+        cursor.execute("SELECT included FROM member WHERE id = %s", (mid,))
+        current = cursor.fetchone()
+
+        if current is None:
+            return {"result": "fail", "message": "회원 없음"}
+
+        if current["included"] == 1:
+            new_status = 0
+        else:
+            new_status = 1
+
+
+        # 상태 반전 적용
+        cursor.execute("UPDATE member SET included = %s WHERE id = %s", (new_status, mid))
+        conn.commit()
+
+    conn.close()
+    return {"result": "ok", "included": new_status}
+
+

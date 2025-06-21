@@ -135,6 +135,12 @@
         margin: 10px auto 20px;
       }
     }
+    .btn-included {
+  background-color: #d0e6f7;  /* 옅은 파란색 */
+  color: #333;
+  font-weight: normal;
+}
+
   </style>
 </head>
 <body>
@@ -157,6 +163,7 @@
           <th>아이디</th>
           <th>오토바이 일 이용료</th>
           <th>저장</th>
+          <th>일 정산 포함</th>
           <th>삭제</th>
         </tr>
       </thead>
@@ -173,6 +180,13 @@
               <button class="btn-small" data-member-id="{{ member.id }}" data-member-name="{{ member.name }}">
                 저장
               </button>
+            </td>
+            <td>
+          <button
+            class="btn-small {% if not member.included %}btn-included{% endif %}"
+            onclick="toggleIncludeMember({{ member.id }}, '{{ member.name }}', {{ member.included | default(false) | lower }})">
+            {{ member.included and '포함됨' or '제외됨' }}
+          </button>
             </td>
               <td>
               <button style="display:none;" class="btn-small" onclick="deleteMember({{ member.id }} , '{{member.name}}')">
@@ -328,6 +342,29 @@ const deleteMember = async  (id, name) => {
   }
 };
 
+const toggleIncludeMember = async (id, name, currentlyIncluded) => {
+  const actionText = currentlyIncluded ? '일 정산에서 제외' : '일 정산에 포함';
+  const confirmed = confirm(`${name} 님을 ${actionText}하시겠습니까?`);
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(`/member/include-toggle/${id}`, {
+      method: 'GET', // 또는 PUT
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      alert(`처리 실패: ${errorText}`);
+      return;
+    }
+
+    alert(`${name} 님이 ${actionText}되었습니다.`);
+    location.reload();
+  } catch (error) {
+    alert(`요청 실패: ${error.message}`);
+  }
+};
 
 
 
