@@ -381,9 +381,9 @@ async def upload_excel(
                     "included": row["included"]
                 })
         conn.close()
-
+        rider_names = [m['name'] for m in include_member]
         result = {}
-
+        print(rider_names)
         # file1 처리 (배달처리비)
         if file1:
             file_bytes = await file1.read()
@@ -401,7 +401,7 @@ async def upload_excel(
             grouped = df.groupby(['라이더명', '운행일'])['배달처리비'].sum().reset_index()
 
             for _, row in grouped.iterrows():
-                rider_names = [m['name'] for m in include_member]
+
                 if row['라이더명'] not in rider_names:
                     continue
                 rider = row['라이더명']
@@ -433,7 +433,6 @@ async def upload_excel(
             insurance_data = df2.groupby(['이름', '운행일'])['보험료 발생금액(원)'].sum().reset_index()
 
             for _, row in insurance_data.iterrows():
-                rider_names = [m['name'] for m in include_member]
                 if row['이름'] not in rider_names:
                     continue
                 rider = row['이름']
