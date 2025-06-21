@@ -750,7 +750,7 @@ async def inc_member(
         if current is None:
             return {"result": "fail", "message": "회원 없음"}
 
-        if current[0] == 1:
+        if current["included"] == 1:
             new_status = 0
         else:
             new_status = 1
