@@ -246,9 +246,9 @@
     }
 
     const result = data.data;
-      if(result.length === 0){
-      alert('결과가 없습니다.')
-      }
+if (Object.keys(result).length === 0) {
+  alert('결과가 없습니다.');
+}
      for (const rider in result) {
         const riderData = result[rider];
         const moto_fee = Number(riderData["moto_fee"]) || 0;
