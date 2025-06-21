@@ -750,6 +750,6 @@ async def inc_member(
         conn.commit()
 
     conn.close()
-    return {"result": "ok", "included": include}
+    return {"result": "ok"}
 
 
