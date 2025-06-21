@@ -742,7 +742,7 @@ async def inc_member(
         mid: str
 ):
     conn = get_conn()
-    with conn.cursor() as cursor:
+    with conn.cursor(dictionary=True) as cursor:
         # 현재 포함 상태 가져오기
         cursor.execute("SELECT included FROM member WHERE id = %s", (mid,))
         current = cursor.fetchone()
