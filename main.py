@@ -372,7 +372,7 @@ async def upload_excel(
         include_member = []
         conn = get_conn()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM test2.member")
+            cursor.execute("SELECT * FROM test2.member where include = 1")
             results = cursor.fetchall()
             for row in results:
                 include_member.append({
