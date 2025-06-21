@@ -810,7 +810,7 @@ async def admin_member_add_data(request: Request):  # Request 대신 Pydantic �
                 end_date,  # `end_date` 컬럼 (DATE)
                 '익일 지급',  # `extra_description` 컬럼
                 final_sum,  # `extra_amount` 컬럼
-                'plus'  # `extra_type` 컬럼
+                'minus'  # `extra_type` 컬럼
             ))
             conn.commit()
         return JSONResponse(content={"message": "주 정산 기타 항목이 성공적으로 등록되었습니다."}, status_code=200)
