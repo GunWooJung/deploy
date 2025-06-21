@@ -372,7 +372,7 @@ async def upload_excel(
         include_member = []
         conn = get_conn()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * included FROM test2.member")
+            cursor.execute("SELECT * FROM test2.member")
             results = cursor.fetchall()
             for row in results:
                 include_member.append({
@@ -744,7 +744,7 @@ async def inc_member(
     conn = get_conn()
     with conn.cursor(dictionary=True) as cursor:
         # 현재 포함 상태 가져오기
-        cursor.execute("SELECT included FROM member WHERE id = %s", (mid,))
+        cursor.execute("SELECT * FROM member WHERE id = %s", (mid,))
         current = cursor.fetchone()
 
         if current is None:
