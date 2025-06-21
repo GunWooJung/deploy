@@ -246,9 +246,9 @@
     }
 
     const result = data.data;
-if (Object.keys(result).length === 0) {
-  alert('결과가 없습니다.');
-}
+    if (Object.keys(result).length === 0) {
+      alert('결과가 없습니다.');
+    }
      for (const rider in result) {
         const riderData = result[rider];
         const moto_fee = Number(riderData["moto_fee"]) || 0;
@@ -261,6 +261,94 @@ if (Object.keys(result).length === 0) {
 
         const riderTitle = document.createElement("h4");
         riderTitle.textContent = `${rider} (최종 합계: 계산 중...) `;
+
+        const registerBtn = document.createElement("button");
+        registerBtn.textContent = "기타 등록";
+        registerBtn.style.marginLeft = "10px";
+
+        registerBtn.addEventListener("click", async (e) => {
+
+        const file1 = document.getElementById("file1").files[0];
+        const file2 = document.getElementById("file2").files[0];
+
+        const file1Name = file1?.name || "";
+        const file2Name = file2?.name || "";
+        console.log(file1Name);
+        console.log(file2Name);
+
+        if(!file1Name || !file2Name){
+          alert('파일 오류');
+          return;
+        }
+          const regex = /_(\d{8})_(\d{8})\.xlsx$/;
+
+          const match1 = file1Name.match(regex);
+          const match2 = file2Name.match(regex);
+
+        console.log(match1);
+        console.log(match2);
+          if (!match1 || !match2) {
+            alert('파일 이름 형식이 올바르지 않습니다.');
+            return;
+          }
+
+          let start_date = null;
+          let end_date = null;
+
+          if (match1[0] === match2[0] && match1[1] === match2[1]) {
+            start_date = match1[1];
+            end_date = match1[2];
+          } else {
+            alert('파일 오류');
+            return;
+          }
+
+
+        const h4 = e.target.closest("div").querySelector("h4");
+
+          if (!h4) {
+            alert("라이더 정보가 없습니다.");
+            return;
+          }
+
+          const text = h4.textContent;
+
+          // 정규표현식으로 금액만 추출 (숫자 + '원' 포함)
+          const match = text.match(/([0-9,]+)원/);
+          const sumText = match ? match[1] : "0";
+          const onlyNumber = parseInt(sumText.replace(/,/g, ""), 10);
+
+          // 정규표현식으로 이름 추출 (괄호 이전까지)
+          const nameMatch = text.match(/^(.+?)\s*\(/);
+          const rider = nameMatch ? nameMatch[1].trim() : "Unknown";
+
+          console.log("라이더:", rider);
+          console.log("합계 금액:", onlyNumber);
+
+          // 서버 전송
+          const payload = {
+            rider,
+            finalSum: onlyNumber,
+            start_date: start_date,
+            end_date: end_date
+          };
+
+          try {
+            const res = await fetch("/api/extra-register", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(payload)
+            });
+            const resJson = await res.json();
+              alert(`'기타 등록이 완료되었습니다.`);
+          } catch (err) {
+            alert("서버 오류: 기타 등록 실패");
+          }
+        });
+
+        riderTitle.appendChild(registerBtn);
         riderSection.appendChild(riderTitle);
 
         const table = document.createElement("table");
@@ -312,7 +400,15 @@ if (Object.keys(result).length === 0) {
           }
 
           riderTitle.firstChild.textContent = `${rider} (전체 합계: (A-B-C-D) = ${formatCurrency(finalSum)})  `;
+
+
+
+
+
         }
+
+
+
 
         // 초기 계산
         recalculateTable(days);

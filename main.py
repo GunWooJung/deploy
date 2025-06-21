@@ -772,3 +772,53 @@ async def inc_member(
     return {"result": "ok"}
 
 
+@app.post("/api/extra-register")
+async def admin_member_add_data(request: Request):  # Request 대신 Pydantic 모델로 직접 데이터 받기
+    conn = None  # conn 초기화
+    try:
+        data = await request.json()  # JSON 본문 파싱
+        rider = data.get("rider")
+        final_sum = data.get("finalSum")
+        start_date = data.get("start_date")
+        end_date = data.get("end_date")
+
+        # 날짜 포맷 변환 예시 (YYYYMMDD -> YYYY-MM-DD)
+        def format_date(date_str):
+            if date_str and len(date_str) == 8:
+                return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
+            return date_str
+
+        start_date = format_date(start_date)
+        end_date = format_date(end_date)
+
+        conn = get_conn()
+        with conn.cursor() as cursor:
+
+            # SQL INSERT 쿼리
+            # weekly_extra_settlement 테이블명과 컬럼명은 실제 데이터베이스 스키마에 맞게 조정하세요.
+            sql = """
+                      INSERT INTO test2.add 
+                      (user_id, name, start_date, end_date, extra_description, extra_amount, extra_type)
+                      VALUES (
+                      (SELECT user_id FROM test2.member WHERE name = %s), %s, %s, %s, %s, %s, %s);
+                      """
+
+            cursor.execute(sql, (
+                rider,  # `user_id` 컬럼 (VARCHAR)
+                rider,  # `name` 컬럼 (VARCHAR)
+                start_date,  # `start_date` 컬럼 (DATE)
+                end_date,  # `end_date` 컬럼 (DATE)
+                '익일 지급',  # `extra_description` 컬럼
+                final_sum,  # `extra_amount` 컬럼
+                'plus'  # `extra_type` 컬럼
+            ))
+            conn.commit()
+        return JSONResponse(content={"message": "주 정산 기타 항목이 성공적으로 등록되었습니다."}, status_code=200)
+    except Exception as e:
+        print(e)
+        if conn:
+            conn.rollback()  # 오류 발생 시 변경사항 롤백
+        raise HTTPException(status_code=500, detail=f"데이터 등록 중 오류 발생: {str(e)}")
+    finally:
+        if conn:
+            conn.close()  # 데이터베이스 연결 닫기
