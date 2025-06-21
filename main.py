@@ -742,15 +742,19 @@ async def inc_member(
         mid: str
 ):
     conn = get_conn()
-    with conn.cursor(dictionary=True) as cursor:
-        # 현재 포함 상태 가져오기
-        cursor.execute("SELECT * FROM member WHERE id = %s", (mid,))
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT included FROM member WHERE id = %s", (mid,))
         current = cursor.fetchone()
+        print(type(current), current)  # 타입과 값을 출력해보세요.
 
         if current is None:
             return {"result": "fail", "message": "회원 없음"}
 
-        if current["included"] == 1:
+        included = current.get("included")
+        if included is None:
+            return {"result": "fail", "message": "included 컬럼 없음"}
+
+        if included == 1:
             new_status = 0
         else:
             new_status = 1
