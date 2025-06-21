@@ -739,25 +739,19 @@ def convert_rows_list(rows):
 
 @app.get("/member/include-toggle/{mid}")
 async def inc_member(
-        mid: str
+        mid: int
 ):
+
     conn = get_conn()
     with conn.cursor() as cursor:
-        cursor.execute("SELECT included FROM member WHERE id = %s", (mid,))
-        current = cursor.fetchone()
-        print(type(current), current)  # 타입과 값을 출력해보세요.
-
-        if current is None:
-            return {"result": "fail", "message": "회원 없음"}
-
-        included = current.get("included")
-        if included is None:
-            return {"result": "fail", "message": "included 컬럼 없음"}
-
-        if included == 1:
-            new_status = 0
-        else:
-            new_status = 1
+        cursor.execute("SELECT id, name, moto_fee, user_id, included FROM test2.member where id = %s", (mid,))
+        results = cursor.fetchall()
+        include = 0
+        for row in results:
+            if row["included"] == 1:
+                new_status = 0
+            else:
+                new_status = 1
 
 
         # 상태 반전 적용
