@@ -514,7 +514,7 @@ async def form_week(file1: UploadFile = File(...)):
     password = "8188703715"
     sheet_name = "을지_협력사 소속 라이더 정산 확인용"
     extra_fee_sheet = "추가배달료"
-
+    extra_fee_sheet2 = "프로모션"
     try:
         encrypted_file = msoffcrypto.OfficeFile(file1.file)
         encrypted_file.load_key(password=password)
@@ -549,6 +549,25 @@ async def form_week(file1: UploadFile = File(...)):
         fee_start_row = 10  # 11행부터 (0-based)
 
         fee_dict = {}
+        for i in range(fee_start_row, len(df_fee)):
+            name_fee = df_fee.iloc[i, 2]  # C열: 이름
+            amount_fee = df_fee.iloc[i, 3]  # D열: 금액
+            reason = df_fee.iloc[i, 5]  # F열: 사유
+
+            if pd.isna(name_fee) or pd.isna(amount_fee):
+                continue
+            """
+            if isinstance(reason, str) and reason.startswith("기피"):
+                continue
+            """
+            amount_fee_parsed = parse_amount(amount_fee)
+            name_key = str(name_fee).strip()
+            fee_dict[name_key] = fee_dict.get(name_key, 0) + amount_fee_parsed
+
+        # 프로모션
+        df_fee = pd.read_excel(decrypted, sheet_name=extra_fee_sheet2, header=None)
+        fee_start_row = 10  # 11행부터 (0-based)
+
         for i in range(fee_start_row, len(df_fee)):
             name_fee = df_fee.iloc[i, 2]  # C열: 이름
             amount_fee = df_fee.iloc[i, 3]  # D열: 금액
