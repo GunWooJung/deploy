@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional, Literal
 
@@ -12,6 +12,7 @@ import io
 import re
 from pydantic import BaseModel
 from starlette.responses import RedirectResponse
+import calendar
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -822,3 +823,50 @@ async def admin_member_add_data(request: Request):  # Request 대신 Pydantic �
     finally:
         if conn:
             conn.close()  # 데이터베이스 연결 닫기
+
+
+@app.get("/admin-month", response_class=HTMLResponse)
+def admin_month(request: Request):
+    return templates.TemplateResponse("gover.html", {
+        "request": request
+    })
+
+
+@app.get("/month-summary")
+def admin_month_sum(
+    year: str = Query(..., pattern=r"^\d{4}$"),
+    month: str = Query(..., pattern=r"^(0[1-9]|1[0-2])$")
+):
+    year = int(year)
+    month = int(month)
+
+    first_day = datetime(year, month, 1)
+    import calendar
+    last_day = datetime(year, month, calendar.monthrange(year, month)[1])
+
+    # 첫 수요일 찾기 (이번 달을 포함하기 위해 전달 포함)
+    start = first_day
+    while start.weekday() != 2:  # 2 = 수요일
+        start -= timedelta(days=1)
+
+    result = []
+
+    while True:
+        week_start = start
+        week_end = start + timedelta(days=6)  # 화요일
+
+        # 이번 주의 화요일이 이번 달보다 넘으면 종료
+        if week_end.month != month:
+            break
+
+        # 이번 주에 이번 달 날짜가 포함된다면 포함 (월초 대비)
+        if week_start <= last_day and week_end >= first_day:
+            print(f"주간: {week_start.strftime('%Y-%m-%d')} ~ {week_end.strftime('%Y-%m-%d')}")
+            result.append({
+                "start": week_start.strftime("%Y-%m-%d"),
+                "end": week_end.strftime("%Y-%m-%d")
+            })
+
+        start += timedelta(days=7)
+
+    return {"weeks": result}

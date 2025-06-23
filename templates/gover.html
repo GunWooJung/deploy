@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>배달비 관리자</title>
+  <style>
+    /* 기존 스타일 유지 */
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: #fff;
+      padding: 20px 30px 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-sizing: border-box;
+      text-align: center;
+    }
+    nav {
+      background-color: #3498db;
+      padding: 12px 20px;
+      display: flex;
+      gap: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0 0 40px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      flex-grow: 1;
+      text-align: center;
+    }
+    nav a.active {
+      background-color: #2980b9;
+    }
+    nav a:hover {
+      background-color: #2980b9;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      padding: 30px;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px 14px;
+      text-align: center;
+      white-space: nowrap; /* 줄바꿈 방지 */
+    }
+    th {
+      background-color: #ecf0f1;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    input[type="number"] {
+      width: 80px;
+      padding: 4px;
+      text-align: right;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .btn-small {
+      min-width: 70px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #34495e;
+      text-align: center;
+    }
+    .btn-add {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      float: right;
+    }
+    @media (max-width: 640px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      th {
+        display: none;
+      }
+      td {
+        border: none;
+        padding: 8px 0;
+        text-align: left;
+      }
+      td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: inline-block;
+        width: 100px;
+      }
+      .btn-add {
+        float: none;
+        display: block;
+        margin: 10px auto 20px;
+      }
+    }
+    #resultCombined {
+  display: flex;
+ /* 추가 */
+  align-items: center;      /* 세로축 기준으로 아이템들을 가운데 정렬 */
+  text-align: center;       /* 텍스트도 가운데 정렬 */
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px;
+}
+
+.card {
+  border: 1px solid #ccc;
+  padding: 15px 20px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  min-width: 500px;
+}
+
+.card h3 {
+  margin-bottom: 15px;
+  font-size: 1.3em;
+  color: #333;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.label {
+  font-weight: 600;
+  color: #555;
+}
+
+.value {
+  font-weight: 400;
+  color: #222;
+}
+
+.total {
+  font-weight: 700;
+  font-size: 1.1em;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+/* Styles for extra items */
+    .extra-items-section {
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1px dashed #eee; /* A dashed line for separation */
+    }
+
+    .extra-items-section h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #666;
+        font-size: 1em;
+    }
+
+    .extra-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+        font-size: 0.95em;
+        color: #444;
+    }
+
+    .extra-item .description {
+        flex-basis: 70%;
+        text-align: left;
+    }
+
+    .extra-item .amount {
+        flex-basis: 30%;
+        text-align: right;
+        font-weight: bold;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/admin-member">회원관리</a>
+      <a href="/admin-manage" >일정산</a>
+      <a href="/admin-week" class="active">주 정산</a>
+      <a href="/admin-add">주 정산 기타 등록</a>
+      <a href="/admin-month" class="active">세금</a>
+    </nav>
+ <!-- 전체를 감싸는 컨테이너를 사용 -->
+    <div>
+      <br>조회 월 선택 (해당 날짜가 포함된 "해당 월"이 선택됩니다.)<br><br>
+      <input id="weekPicker" placeholder="월 선택" readonly style="width: 200px;" /><br><br>
+      선택된 월 : <div id="weekRangeDisplay" style="margin-top: 8px; font-weight: bold;">없음</div>
+      <br><br>
+    </div>
+    <h3>파일 다운로드</h3>
+    <div id="resultCombined" class="result-box">
+        <button id = "download" onclick="downLoad()">엑셀 다운 로드</button>
+    </div>
+  </div>
+
+  <script>
+  const password = "3458";
+  const PASSWORD_KEY = "admin_password";
+
+  // localStorage에 저장된 비밀번호 확인
+  const savedPassword = localStorage.getItem(PASSWORD_KEY);
+
+  if (savedPassword !== password) {
+    const input = prompt("현관문(안쪽) 비밀번호를 입력하세요:");
+
+    if (input !== password) {
+      alert("비밀번호가 틀렸습니다. 페이지를 닫습니다.");
+      window.close();  // 브라우저가 허용하지 않으면 아래로 대체
+      document.body.innerHTML = "<h2>접근이 차단되었습니다.</h2>";
+    } else {
+      // 올바른 비밀번호면 localStorage에 저장
+      localStorage.setItem(PASSWORD_KEY, password);
+    }
+  }
+
+
+
+// 전역 변수 선언
+let yearValue = null;
+let monthValue = null;
+
+async function downLoad(){
+
+    if(!yearValue||!monthValue){
+        alert('월을 선택하세요.');
+    }
+  // ✅ 서버에서 데이터 불러오기
+
+  try {
+    const res = await fetch(`/month-summary?year=${yearValue}&month=${monthValue}`);
+    if (!res.ok) throw new Error("조회 실패");
+  } catch (err) {
+    console.log(err);
+  }
+
+}
+// 요일 이름
+const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
+function format(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}년 ${mm}월`;
+}
+
+const weekPicker = flatpickr("#weekPicker", {
+  dateFormat: "Y-m-d",
+  onChange: handleWeekChange
+});
+
+// 공통 핸들러 함수로 분리
+async function handleWeekChange(selectedDates) {
+
+  const start = new Date(selectedDates[0]);
+  start.setDate(start.getDate() ); // 하루 전으로 이동
+
+  const day = start.getDay();
+
+  // 👉 년/월 포맷 출력
+  const yyyy = start.getFullYear();
+  const mm = String(start.getMonth() + 1).padStart(2, '0');
+  const yearMonthFormatted = `${yyyy}년 ${mm}월`;
+
+  console.log("선택된 기준 월:", yearMonthFormatted);
+
+  document.getElementById("weekRangeDisplay").textContent = `${yearMonthFormatted}`;
+    yearValue = yyyy;
+    monthValue = mm;
+}
+
+
+  </script>
+</body>
+</html>
