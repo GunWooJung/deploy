@@ -224,7 +224,7 @@
     <nav>
       <a href="/admin-member">회원관리</a>
       <a href="/admin-manage" >일정산</a>
-      <a href="/admin-week" class="active">주 정산</a>
+      <a href="/admin-week" >주 정산</a>
       <a href="/admin-add">주 정산 기타 등록</a>
       <a href="/admin-month" class="active">세금</a>
     </nav>
@@ -267,21 +267,30 @@
 let yearValue = null;
 let monthValue = null;
 
-async function downLoad(){
-
-    if(!yearValue||!monthValue){
-        alert('월을 선택하세요.');
-    }
-  // ✅ 서버에서 데이터 불러오기
-
+async function downLoad() {
+  if (!yearValue || !monthValue) {
+    alert('월을 선택하세요.');
+    return;
+  }
   try {
     const res = await fetch(`/month-summary?year=${yearValue}&month=${monthValue}`);
     if (!res.ok) throw new Error("조회 실패");
-  } catch (err) {
-    console.log(err);
-  }
 
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `세금계산서_${yearValue}_${monthValue}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert("다운로드 실패");
+  }
 }
+
+
 // 요일 이름
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 

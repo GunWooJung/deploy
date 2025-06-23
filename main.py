@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
+from io import BytesIO
 from typing import Optional, Literal
 
+import openpyxl
 import pymysql
 from fastapi import FastAPI, File, UploadFile, Request, Query, Path, Body, HTTPException
 from fastapi.templating import Jinja2Templates
@@ -11,7 +13,7 @@ import msoffcrypto
 import io
 import re
 from pydantic import BaseModel
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, StreamingResponse
 import calendar
 
 app = FastAPI()
@@ -831,7 +833,6 @@ def admin_month(request: Request):
         "request": request
     })
 
-
 @app.get("/month-summary")
 def admin_month_sum(
     year: str = Query(..., pattern=r"^\d{4}$"),
@@ -841,32 +842,122 @@ def admin_month_sum(
     month = int(month)
 
     first_day = datetime(year, month, 1)
-    import calendar
     last_day = datetime(year, month, calendar.monthrange(year, month)[1])
 
-    # 첫 수요일 찾기 (이번 달을 포함하기 위해 전달 포함)
     start = first_day
-    while start.weekday() != 2:  # 2 = 수요일
+    while start.weekday() != 2:  # 첫 수요일 찾기
         start -= timedelta(days=1)
 
     result = []
+    conn = get_conn()
 
     while True:
         week_start = start
-        week_end = start + timedelta(days=6)  # 화요일
-
-        # 이번 주의 화요일이 이번 달보다 넘으면 종료
+        week_end = start + timedelta(days=6)
         if week_end.month != month:
             break
 
-        # 이번 주에 이번 달 날짜가 포함된다면 포함 (월초 대비)
         if week_start <= last_day and week_end >= first_day:
-            print(f"주간: {week_start.strftime('%Y-%m-%d')} ~ {week_end.strftime('%Y-%m-%d')}")
-            result.append({
-                "start": week_start.strftime("%Y-%m-%d"),
-                "end": week_end.strftime("%Y-%m-%d")
-            })
+            with conn.cursor() as cursor:
+                sql1 = """
+                    SELECT user_id, name, SUM(extra_amount) AS extra_sum
+                    FROM test2.add
+                    WHERE start_date >= %s AND end_date <= %s AND extra_type = 'plus'
+                    GROUP BY user_id, name
+                """
+                cursor.execute(sql1, (week_start.strftime('%Y-%m-%d'), week_end.strftime('%Y-%m-%d')))
+                add_rows = cursor.fetchall()
+                add_data = {(row["user_id"], row["name"]): row["extra_sum"] for row in add_rows}
 
+                sql2 = """
+                    SELECT 
+                        user_id, 
+                        name,
+                        SUM(count) AS countSum,
+                        SUM(totalA) + SUM(totalB) +
+                            CASE 
+                                WHEN SUM(count) >= 500 THEN 20000 + 30000 + 30000 + 40000 + 40000 + 50000 + 50000
+                                WHEN SUM(count) >= 450 THEN 20000 + 30000 + 30000 + 40000 + 40000 + 50000
+                                WHEN SUM(count) >= 400 THEN 20000 + 30000 + 30000 + 40000 + 40000
+                                WHEN SUM(count) >= 350 THEN 20000 + 30000 + 30000 + 40000
+                                WHEN SUM(count) >= 300 THEN 20000 + 30000 + 30000
+                                WHEN SUM(count) >= 250 THEN 20000 + 30000
+                                WHEN SUM(count) >= 200 THEN 20000
+                                ELSE 0
+                            END AS total_base
+                    FROM test2.week
+                    WHERE start_date >= %s AND end_date <= %s
+                    GROUP BY user_id, name
+                """
+                cursor.execute(sql2, (week_start.strftime('%Y-%m-%d'), week_end.strftime('%Y-%m-%d')))
+                week_rows = cursor.fetchall()
+                week_data = {(row["user_id"], row["name"]): row for row in week_rows}
+
+                all_keys = set(week_data.keys()) | set(add_data.keys())
+                merged_data = []
+                for key in all_keys:
+                    user_id, name = key
+                    week_row = week_data.get(key)
+                    add_bonus = add_data.get(key, 0)
+                    base_total = week_row["total_base"] if week_row else 0
+                    merged_data.append({
+                        "user_id": user_id,
+                        "name": name,
+                        "total": base_total + add_bonus
+                    })
+
+                result.append({
+                    "start": week_start.strftime("%Y-%m-%d"),
+                    "end": week_end.strftime("%Y-%m-%d"),
+                    "data": merged_data
+                })
         start += timedelta(days=7)
 
-    return {"weeks": result}
+    # 엑셀 생성
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"{year}-{month:02d}"
+
+    # 헤더 작성
+    ws.cell(row=1, column=1, value="라이더명")
+    ws.cell(row=1, column=2, value="아이디")
+    week_ranges = [f"{w['start']}~{w['end']}" for w in result]
+    for i, week in enumerate(week_ranges):
+        ws.cell(row=1, column=3 + i, value=week)
+    ws.cell(row=1, column=3 + len(week_ranges), value="합계")
+
+    # 데이터 정리
+    rider_map = {}
+    for i, week in enumerate(result):
+        for row in week["data"]:
+            key = (row["user_id"], row["name"])
+            if key not in rider_map:
+                rider_map[key] = [0] * len(result)
+            rider_map[key][i] = row["total"]
+
+    # 엑셀 데이터 작성
+    for row_idx, ((user_id, name), totals) in enumerate(rider_map.items(), start=2):
+        ws.cell(row=row_idx, column=1, value=name)
+        ws.cell(row=row_idx, column=2, value=user_id)
+        for col_idx, val in enumerate(totals):
+            ws.cell(row=row_idx, column=3 + col_idx, value=val)
+        ws.cell(row=row_idx, column=3 + len(totals), value=sum(totals))
+
+    # 메모리 스트림으로 저장
+    stream = BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+
+    filename = f"세금계산서_{year}_{month:02d}.xlsx"
+    from urllib.parse import quote
+    quoted_filename = quote(filename)
+
+    headers = {
+        "Content-Disposition": f"attachment; filename*=UTF-8''{quoted_filename}"
+    }
+
+    return StreamingResponse(
+        stream,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers
+    )
