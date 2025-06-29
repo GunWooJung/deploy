@@ -1,2 +1,2 @@
 pip install fastapi uvicorn[standard] pandas openpyxl msoffcrypto-tool jinja2 python-multipart
-sqlalchemy pymysql
+pip install sqlalchemy pymysql
