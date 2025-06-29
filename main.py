@@ -276,6 +276,15 @@ def admin_member(request: Request):
         "data": []
     })
 
+@app.get("/admin-manage-temp", response_class=HTMLResponse)
+def admin_member(request: Request):
+    return templates.TemplateResponse("upload48.html", {
+        "request": request,
+        "data": []
+    })
+
+
+
 
 @app.get("/admin-member", response_class=HTMLResponse)
 def admin_manage(request: Request):
