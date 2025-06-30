@@ -358,7 +358,7 @@
           <tr>
             <th>운행일</th>
             <th>배달처리비=A</th>
-            <th>4.8%=B</th>
+            <th>4.98%=B</th>
             <th>시보=C</th>
              <th>오토 (<span>${formatCurrency(moto_fee)} × </span><input type="number" value="${days}" min="1" class="daysInput" style="width:40px; display:inline-block;" />&nbsp;일)=D</th>
             <th>일 합계 금액(A-B-C-D)</th>
@@ -383,7 +383,7 @@
             const 배달처리비 = Number(record["배달처리비"]) || 0;
             const 보험료 = Number(record["보험료 발생금액(원)"]) || 0;
 
-            const afterTax = Math.floor(배달처리비 *  0.048);
+            const afterTax = Math.floor(배달처리비 *  0.0498);
             const motoFeeTotal = moto_fee * currentDays;
             const afterMoto = 배달처리비 - afterTax - 보험료 - motoFeeTotal;
 
