@@ -248,7 +248,13 @@
     </div>
 
     <h3>집계 결과</h3>
+
     <div id = "totalAll"></div>
+
+        <!-- ✅ 추가 -->
+    <div id="checkedTotal" style="margin: 30px; font-size: 1.2em; font-weight: bold;">
+      <br>✅ 선택된 라이더 총 합계: 0 원<br>
+    </div>
     <div id="resultCombined" class="result-box">
       <!-- 일정산 + 보험료 결과 영역 -->
     </div>
@@ -374,6 +380,7 @@ async function handleWeekChange(selectedDates) {
     const resJson = await res.json();
     if (resJson.status === "success") {
       renderWeekTable(resJson.data);
+      addRiderCheckboxes();
     } else {
       document.getElementById("resultCombined").innerHTML = "<div>데이터가 없습니다.</div>";
     }
@@ -430,8 +437,8 @@ function renderWeekTable(data) {
         <div class="item"><span class="label">A 배달료:</span> <span class="value">${row.totalA.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">B 추가 지급(과적,조리대기,기피지역):</span> <span class="value">${row.totalB.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">C 추가 지급(건수 프로모션):</span> <span class="value">${addC.toLocaleString()} 원</span></div>
-        <div class="item"><span class="label">D 4.9% 세금 = 0.049*(A+B+C) :</span> <span class="value">${government.toLocaleString()} 원</span></div>
-        <div class="item"><span class="label">E 시간제 보험료:</span> <span class="value">${row.totalD.toLocaleString()} 원</span></div>
+        <div class="item"><span class="label">D 4.9% 세금 = 0.049*(A+B+C) :</span> <span class="value"> -${government.toLocaleString()} 원</span></div>
+        <div class="item"><span class="label">E 시간제 보험료:</span> <span class="value">-${row.totalD.toLocaleString()} 원</span></div>
     `;
 
     row.extra_list.map(item => {
@@ -448,7 +455,7 @@ function renderWeekTable(data) {
           item.extra_amount = item.extra_amount * (-1);
           total += item.extra_amount;
           cardHTML += `<div class="item">
-          <span class="label">기타(${item.extra_description}):</span> <span class="value">${item.extra_amount.toLocaleString()} 원</span>
+          <span class="label">기타(${item.extra_description}/${item.start_date}~${item.end_date}):</span> <span class="value">${item.extra_amount.toLocaleString()} 원</span>
           </div>`;
         }
     });
@@ -471,6 +478,59 @@ function renderWeekTable(data) {
     <h3>세전 4.9% 차감 합계 = ${totalBeforeFour.toLocaleString()} 원</h3><br>
     <h3>전체 모든 인원 합계 = ${totalAll.toLocaleString()} 원</h3>`;
 }
+
+
+function addRiderCheckboxes() {
+  const cards = document.querySelectorAll("#resultCombined .card");
+  cards.forEach(card => {
+    const h3 = card.querySelector("h3");
+    const riderName = h3.textContent;
+
+    // 이미 체크박스 있으면 중복 추가 방지
+    if (h3.querySelector("input[type='checkbox']")) return;
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.style.marginRight = "8px";
+
+    // ✅ riderName + 합계 가져오기
+    const totalText = card.querySelector(".item.total:last-child .value").textContent;
+    const totalAmount = parseInt(totalText.replace(/[^\d]/g, ""), 10);
+
+    // ✅ 체크 시 총합계 갱신
+    checkbox.addEventListener("change", () => {
+      updateCheckedTotal();
+    });
+
+    // 텍스트 노드로 기존 riderName 넣기 (riderName (합계: x 원))
+    const labelText = document.createTextNode(` ${riderName} (총 합계: ${totalAmount.toLocaleString()} 원)`);
+
+    // 초기 내용 비우고 다시 넣음
+    h3.textContent = "";
+    h3.appendChild(checkbox);
+    h3.appendChild(labelText);
+  });
+}
+
+function updateCheckedTotal() {
+  const checkboxes = document.querySelectorAll("#resultCombined .card h3 input[type='checkbox']");
+  let total = 0;
+
+  checkboxes.forEach(checkbox => {
+    if (checkbox.checked) {
+      const label = checkbox.nextSibling?.nodeValue || "";
+      const match = label.match(/총 합계:\s*([\d,]+)/);
+      if (match) {
+        const amount = parseInt(match[1].replace(/,/g, ""), 10);
+        total += amount;
+      }
+    }
+  });
+
+  const checkedTotalDiv = document.getElementById("checkedTotal");
+  checkedTotalDiv.textContent = `\n✅ 선택된 라이더 총 합계: ${total.toLocaleString()} 원\n`;
+}
+
   </script>
 </body>
 </html>

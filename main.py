@@ -672,7 +672,7 @@ async def get_week_summary(start: str = Query(...), end: str = Query(...)):
         week_rows = convert_rows_list(week_rows)
         # 기타항목 데이터 (그대로 리스트로)
         cursor.execute("""
-               SELECT user_id, extra_description, extra_amount, extra_type
+               SELECT user_id, extra_description, extra_amount, extra_type, start_date, end_date
                FROM `add`
                WHERE start_date >= %s AND end_date <= %s
            """, (start_str, end_str))
@@ -695,7 +695,10 @@ async def get_week_summary(start: str = Query(...), end: str = Query(...)):
         entry = {
             "extra_description": row["extra_description"],
             "extra_amount": row["extra_amount"],
-            "extra_type": row["extra_type"]
+            "extra_type": row["extra_type"],
+            "start_date": row["start_date"].isoformat() if hasattr(row["start_date"], "isoformat") else row[
+                "start_date"],
+            "end_date": row["end_date"].isoformat() if hasattr(row["end_date"], "isoformat") else row["end_date"]
         }
         extra_map.setdefault(uid, []).append(entry)
 

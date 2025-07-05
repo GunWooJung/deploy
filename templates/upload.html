@@ -165,7 +165,7 @@
         </div>
       </form>
     </div>
-
+<h3 id="checkedTotal">✅ 선택된 라이더 합계: 0원</h3>
     <h3>집계 결과</h3>
     <div id="resultCombined" class="result-box">
       <!-- 일정산 + 보험료 결과 영역 -->
@@ -262,6 +262,17 @@
 
         const riderTitle = document.createElement("h4");
         riderTitle.textContent = `${rider} (최종 합계: 계산 중...) `;
+
+        // ✅ 추가: 라이더별 체크박스
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.style.marginRight = "8px";
+        riderTitle.prepend(checkbox);
+
+        // ✅ 체크박스 변경 시 전체 합계 갱신
+        checkbox.addEventListener("change", () => {
+          updateCheckedTotal();
+        });
 
         const registerBtn = document.createElement("button");
         registerBtn.textContent = "기타 등록";
@@ -400,7 +411,8 @@
             tbody.appendChild(tr);
           }
 
-          riderTitle.firstChild.textContent = `${rider} (전체 합계: (A-B-C-D) = ${formatCurrency(finalSum)})  `;
+        //  riderTitle.firstChild.textContent = `${rider} (전체 합계: (A-B-C-D) = ${formatCurrency(finalSum)})  `;
+checkbox.nextSibling.nodeValue = `${rider} (전체 합계: (A-B-C-D) = ${formatCurrency(finalSum)})  `;
 
 
 
@@ -426,6 +438,30 @@
         });
       }
    });
+
+
+function updateCheckedTotal() {
+  let total = 0;
+  const checkboxes = document.querySelectorAll('#resultCombined input[type="checkbox"]');
+
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      const h4 = cb.parentElement;
+      const text = h4.textContent;
+
+      // "전체 합계" 또는 "최종 합계" 모두 대응
+      const match = text.match(/합계.*?([0-9,]+)원/);
+      if (match) {
+        total += parseInt(match[1].replace(/,/g, ''), 10);
+      }
+    }
+  });
+
+  const totalDisplay = document.getElementById("checkedTotal");
+  totalDisplay.textContent = `✅ 선택된 라이더 합계: ${total.toLocaleString()}원`;
+}
+
+
  </script>
 </body>
 </html>
