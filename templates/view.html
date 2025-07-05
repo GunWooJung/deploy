@@ -156,12 +156,12 @@
         if(item.extra_type == 'plus'){
           item.extra_amount = Math.floor(item.extra_amount * ( 1-0.049));
           totalSum += item.extra_amount;
-          tableHTML += `<tr><td>기타(${item.extra_description}):</td><td>(4.9% 공제 후)  ${fmt(item.extra_amount)} 원</td></tr>`;
+          tableHTML += `<tr><td>기타(${item.extra_description}/${item.start_date}~${item.end_date}):</td><td>(4.9% 공제 후)  ${fmt(item.extra_amount)} 원</td></tr>`;
         }
         else{
           item.extra_amount = item.extra_amount * (-1);
           totalSum += item.extra_amount;
-          tableHTML += `<tr><td>기타(${item.extra_description}):</td><td>${item.extra_amount.toLocaleString()} 원</td></tr>`;
+          tableHTML += `<tr><td>기타(${item.extra_description}/${item.start_date}~${item.end_date}):</td><td>${item.extra_amount.toLocaleString()} 원</td></tr>`;
         }
     });
 
