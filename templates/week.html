@@ -215,6 +215,28 @@
         text-align: right;
         font-weight: bold;
     }
+
+.card-details {
+  display: none;
+  margin-top: 10px;
+}
+.toggle-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  user-select: none;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background-color: #2980b9;
+}
+
+
   </style>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -380,7 +402,6 @@ async function handleWeekChange(selectedDates) {
     const resJson = await res.json();
     if (resJson.status === "success") {
       renderWeekTable(resJson.data);
-      addRiderCheckboxes();
     } else {
       document.getElementById("resultCombined").innerHTML = "<div>데이터가 없습니다.</div>";
     }
@@ -431,7 +452,12 @@ function renderWeekTable(data) {
 
     let cardHTML = `
       <div class="card">
-        <h3>${row.name}</h3>
+
+        <h3>
+        ${row.name}
+        </h3>
+                <button class="toggle-btn" style="margin-left: 10px; font-size: 14px;">+</button>
+          <div class="card-details">
         <div class="item"><span class="label">라이더명:</span> <span class="value">${row.name}</span></div>
         <div class="item"><span class="label">배달 건수:</span> <span class="value">${row.count.toLocaleString()} 건</span></div>
         <div class="item"><span class="label">A 배달료:</span> <span class="value">${row.totalA.toLocaleString()} 원</span></div>
@@ -466,7 +492,7 @@ function renderWeekTable(data) {
     <span class="value">${beforeTotalFour.toLocaleString()} 원</span></div>
     <div class="item total"><span class="label">총 합계(A+B+C-D-E ± 기타):</span>
     <span class="value">${total.toLocaleString()} 원</span></div>
-    </div>`;
+    </div>  </div>`;
     totalAll += total;
     totalBeforeAll += beforeTotal;
     totalBeforeFour += beforeTotalFour;
@@ -477,6 +503,26 @@ function renderWeekTable(data) {
     totalSumDiv.innerHTML = `<h3>세전 전체 합계 = ${totalBeforeAll.toLocaleString()} 원</h3><br>
     <h3>세전 4.9% 차감 합계 = ${totalBeforeFour.toLocaleString()} 원</h3><br>
     <h3>전체 모든 인원 합계 = ${totalAll.toLocaleString()} 원</h3>`;
+
+
+     // 생성된 모든 토글 버튼 선택
+      const toggleButtons = resultBox.querySelectorAll(".toggle-btn");
+      toggleButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const card = btn.closest(".card");
+          const details = card.querySelector(".card-details");
+          const isHidden = details.style.display === "none" || !details.style.display;
+          if (isHidden) {
+            details.style.display = "block";
+            btn.textContent = "–";
+          } else {
+            details.style.display = "none";
+            btn.textContent = "+";
+          }
+        });
+      });
+
+  addRiderCheckboxes();
 }
 
 
@@ -530,6 +576,7 @@ function updateCheckedTotal() {
   const checkedTotalDiv = document.getElementById("checkedTotal");
   checkedTotalDiv.textContent = `\n✅ 선택된 라이더 총 합계: ${total.toLocaleString()} 원\n`;
 }
+
 
   </script>
 </body>

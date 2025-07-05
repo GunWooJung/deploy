@@ -361,7 +361,31 @@
         });
 
         riderTitle.appendChild(registerBtn);
+
+         // 🔽 추가된 부분 시작: toggle button + riderBody
+        const toggleBtn = document.createElement("button");
+        toggleBtn.textContent = "+";
+        toggleBtn.style.marginLeft = "10px";
+        toggleBtn.style.fontWeight = "bold";
+        toggleBtn.style.cursor = "pointer";
+
+        const riderBody = document.createElement("div");
+        riderBody.classList.add("rider-body");
+        riderBody.style.display = "none";
+
+        toggleBtn.addEventListener("click", () => {
+          const isVisible = riderBody.style.display === "block";
+          riderBody.style.display = isVisible ? "none" : "block";
+          toggleBtn.textContent = isVisible ? "+" : "−";
+        });
+
+        riderTitle.appendChild(toggleBtn);
+        // 🔼 추가된 부분 끝
+
+
         riderSection.appendChild(riderTitle);
+
+
 
         const table = document.createElement("table");
         const thead = document.createElement("thead");
@@ -378,7 +402,11 @@
         table.appendChild(thead);
         const tbody = document.createElement("tbody");
         table.appendChild(tbody);
-        riderSection.appendChild(table);
+        //riderSection.appendChild(table);
+          riderBody.appendChild(table);
+          riderSection.appendChild(riderBody);
+
+
         resultCombined.appendChild(riderSection);
 
         function recalculateTable(currentDays) {
