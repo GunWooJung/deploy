@@ -148,8 +148,8 @@
               <tr><td>A 배달료</td><td>${fmt(row.totalA)} 원</td></tr>
               <tr><td>B 추가 지급(과적,조리대기,기피지역) </td><td>${fmt(row.totalB)} 원</td></tr>
               <tr><td>C 추가 지급 (건수 프로모션)</td><td>${fmt(addByCountResult)} 원</td></tr>
-              <tr><td>D 4.9% 세금(고용,산재,소득세,주민세)<br>= 0.049*(A+B+C)</td><td>${fmt(government)} 원</td></tr>
-              <tr><td>E 시간제 보험료</td><td>${fmt(row.totalD)} 원</td></tr>`;
+              <tr><td>D 4.9% 세금(고용,산재,소득세,주민세)<br>= 0.049*(A+B+C)</td><td>-${fmt(government)} 원</td></tr>
+              <tr><td>E 시간제 보험료</td><td>-${fmt(row.totalD)} 원</td></tr>`;
 
 
     row.extra_list.map(item => {
