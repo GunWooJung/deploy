@@ -204,8 +204,9 @@ async def rget_week_summary(
             "extra_description": row["extra_description"],
             "extra_amount": row["extra_amount"],
             "extra_type": row["extra_type"],
-            "start_date": row["start_date"],
-            "end_date": row["end_date"]
+            "start_date": row["start_date"].isoformat() if hasattr(row["start_date"], "isoformat") else row[
+                "start_date"],
+            "end_date": row["end_date"].isoformat() if hasattr(row["end_date"], "isoformat") else row["end_date"]
         }
         extra_map.setdefault(uid, []).append(entry)
 
