@@ -463,7 +463,7 @@ function renderWeekTable(data) {
         <div class="item"><span class="label">A 배달료:</span> <span class="value">${row.totalA.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">B 추가 지급(과적,조리대기,기피지역):</span> <span class="value">${row.totalB.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">C 추가 지급(건수 프로모션):</span> <span class="value">${addC.toLocaleString()} 원</span></div>
-        <div class="item"><span class="label">D 4.9% 세금 = 0.049*(A+B+C) :</span> <span class="value"> -${government.toLocaleString()} 원</span></div>
+        <div class="item"><span class="label">D 세금 = 4.9% * (A+B+C) :</span> <span class="value"> -${government.toLocaleString()} 원</span></div>
         <div class="item"><span class="label">E 시간제 보험료:</span> <span class="value">-${row.totalD.toLocaleString()} 원</span></div>
     `;
 
