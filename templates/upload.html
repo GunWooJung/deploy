@@ -141,6 +141,18 @@ input[type="checkbox"] {
   vertical-align: middle; /* 텍스트와 수직 가운데 정렬 */
   cursor: pointer;
 }
+
+
+textarea {
+  width: 600px;
+  resize: none;
+  overflow: hidden;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px;
+  font-family: 'Segoe UI', sans-serif;
+  box-sizing: border-box;
+}
   </style>
 </head>
 <body>
@@ -255,6 +267,7 @@ input[type="checkbox"] {
     if (Object.keys(result).length === 0) {
       alert('결과가 없습니다.');
     }
+     const notes = data.note;
      for (const rider in result) {
         const riderData = result[rider];
         const moto_fee = Number(riderData["moto_fee"]) || 0;
@@ -282,6 +295,9 @@ input[type="checkbox"] {
         const registerBtn = document.createElement("button");
         registerBtn.textContent = "기타 등록";
         registerBtn.style.marginLeft = "10px";
+
+
+
 
         registerBtn.addEventListener("click", async (e) => {
 
@@ -388,6 +404,34 @@ input[type="checkbox"] {
         // 🔼 추가된 부분 끝
 
 
+            // **readonly로 note 보여줄 공간 추가**
+
+            const noteDisplay = document.createElement("textarea");
+             noteDisplay.readOnly = true;
+              noteDisplay.style.width = "50%";
+              noteDisplay.style.marginTop = "8px";
+              noteDisplay.style.resize = "none";
+              noteDisplay.style.border = "1px solid #ccc";
+              noteDisplay.style.borderRadius = "6px";
+              noteDisplay.style.padding = "6px";
+              noteDisplay.style.fontFamily = "'Segoe UI', sans-serif";
+
+
+                // rider 변수에 현재 라이더 이름이 들어있다고 가정
+                const riderName = rider;  // 예: "홍길동"
+              console.log(rider);
+                // 해당 라이더 이름과 일치하는 객체 찾기
+                const riderNoteObj = notes.find(item => item.name === riderName);
+
+                // note 값 할당 (없으면 빈 문자열)
+                const riderNote = riderNoteObj ? riderNoteObj.note : "";
+                console.log(riderNote);
+              // 내용 넣고 높이 자동 맞추기
+              noteDisplay.value = riderNote;
+
+
+
+              riderTitle.appendChild(noteDisplay);  // DOM에 먼저 추가
         riderSection.appendChild(riderTitle);
 
 
@@ -469,6 +513,9 @@ checkbox.nextSibling.nodeValue = `${rider} (전체 합계: (A-B-C-D) = ${formatC
         daysInputTh.addEventListener("input", () => {
           recalculateTable(Number(daysInputTh.value));
         });
+
+    
+            document.querySelectorAll('textarea').forEach(autoResize);
       }
    });
 
@@ -493,7 +540,10 @@ function updateCheckedTotal() {
   const totalDisplay = document.getElementById("checkedTotal");
   totalDisplay.textContent = `✅ 선택된 라이더 합계: ${total.toLocaleString()}원`;
 }
-
+function autoResize(textarea) {
+  textarea.style.height = 'auto';  // 높이 초기화
+  textarea.style.height = (textarea.scrollHeight) + 'px';  // 스크롤 높이만큼 확장
+}
 
  </script>
 </body>

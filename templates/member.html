@@ -141,6 +141,29 @@
   font-weight: normal;
 }
 
+.note-cell {
+  padding: 0;
+}
+
+.note-wrapper {
+  display: flex;
+  align-items: center;         /* 수직 정렬 중앙 */
+  gap: 8px;
+  padding: 8px;
+  justify-content: center;     /* 좌우 정렬 중앙 */
+}
+
+.note-wrapper textarea {
+  width: 300px;
+  resize: none;
+  overflow: hidden;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px;
+  font-family: 'Segoe UI', sans-serif;
+  box-sizing: border-box;
+}
+
   </style>
 </head>
 <body>
@@ -165,7 +188,8 @@
           <th>오토바이 일 이용료</th>
           <th>저장</th>
           <th>일 정산 포함</th>
-          <th>삭제</th>
+          <!--<th>삭제</th>-->
+          <th>메모</th>
         </tr>
       </thead>
       <tbody>
@@ -189,11 +213,26 @@
             {{ member.included and '포함됨' or '제외됨' }}
           </button>
             </td>
+            <!--
               <td>
               <button style="display:none;" class="btn-small" onclick="deleteMember({{ member.id }} , '{{member.name}}')">
                 삭제
               </button>
             </td>
+            -->
+          <td class="note-cell">
+            <div class="note-wrapper">
+              <textarea
+                data-member-id="{{ member.id }}"
+                rows="2"
+                cols="20"
+                placeholder="메모 작성"
+                oninput="autoResize(this)"
+              >{{ member.note }}</textarea>
+              <button class="btn-small note-save-btn" data-member-id="{{ member.id }}">저장</button>
+            </div>
+          </td>
+
           </tr>
         {% endfor %}
       </tbody>
@@ -270,7 +309,7 @@
   };
 
 memberTableBody.addEventListener('click', async (e) => {
-  const button = e.target.closest('button[data-member-id]');
+  const button = e.target.closest('button[data-member-id][data-member-name]');
   if (!button) return;
 
   const memberId = button.getAttribute('data-member-id');
@@ -367,8 +406,41 @@ const toggleIncludeMember = async (id, name, currentlyIncluded) => {
   }
 };
 
+// 메모 저장 처리
+document.querySelectorAll(".note-save-btn").forEach(button => {
+  button.addEventListener("click", async (e) => {
+    const memberId = button.getAttribute("data-member-id");
+    const textarea = document.querySelector(`textarea[data-member-id="${memberId}"]`);
+    const note = textarea.value;
 
+    try {
+      const res = await fetch(`/member/note/${memberId}`, {
+        method: "PUT",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note })
+      });
 
+      if (!res.ok) {
+        const errText = await res.text();
+        alert(`메모 저장 실패: ${errText}`);
+        return;
+      }
+
+      alert("메모가 저장되었습니다.");
+      location.reload();
+    } catch (err) {
+      alert(`메모 저장 중 오류: ${err.message}`);
+    }
+  });
+});
+function autoResize(textarea) {
+  textarea.style.height = 'auto';  // 높이 초기화
+  textarea.style.height = (textarea.scrollHeight) + 'px';  // 스크롤 높이만큼 확장
+}
+// 페이지 로드 시 초기 높이 조절
+  window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('textarea').forEach(autoResize);
+  });
   </script>
 </body>
 </html>

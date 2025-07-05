@@ -297,7 +297,7 @@ def admin_manage(request: Request):
     conn = get_conn()
     members = []
     with conn.cursor() as cursor:
-        cursor.execute("SELECT id, name, moto_fee, user_id, included FROM test2.member")
+        cursor.execute("SELECT id, name, moto_fee, user_id, included, note FROM test2.member")
         results = cursor.fetchall()
         for row in results:
             members.append({
@@ -305,7 +305,8 @@ def admin_manage(request: Request):
                 "name": row["name"],
                 "moto_fee": row["moto_fee"],
                 "user_id": row["user_id"],
-                "included": row["included"]
+                "included": row["included"],
+                "note": row["note"] if row["note"] is not None else ""
             })
     conn.close()
 
@@ -393,7 +394,8 @@ async def upload_excel(
                 include_member.append({
                     "id": row["id"],
                     "name": row["name"],
-                    "included": row["included"]
+                    "included": row["included"],
+                    "note": row["note"]
                 })
         conn.close()
         rider_names = [m['name'] for m in include_member]
@@ -491,7 +493,8 @@ async def upload_excel(
 
         return {
             "status": "success",
-            "data": result
+            "data": result,
+            "note" : include_member
         }
 
     except Exception as e:
@@ -976,3 +979,22 @@ def admin_month_sum(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers=headers
     )
+
+
+@app.put("/member/note/{mid}")
+async def save_member_note(mid: int, request: Request):
+    data = await request.json()
+    note = data.get("note", "")  # 없으면 빈 문자열 처리
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE test2.member SET note = %s WHERE id = %s",
+                (note, mid)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {"result": "ok"}
